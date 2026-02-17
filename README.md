@@ -84,12 +84,15 @@ npm run dev
 3. Klicke auf **"Neue Session starten"**.
 4. Teile den **Session-Code** (z.B. `AB12CD`) deiner Klasse mit.
 5. Im Dashboard siehst du live, welche Teams beitreten. Du kannst das Team-Limit jederzeit anpassen.
+6. Klicke auf **"Spiel jetzt starten!"**, um alle angemeldeten Teams in den Spielmodus zu versetzen.
+7. Am Ende des Spiels kannst du über **"Spiel beenden"** alle Schüler zurückwerfen.
 
 ### Für Schüler
 1. Gehe auf die Startseite oder direkt auf [http://localhost:3000/student.html](http://localhost:3000/student.html).
 2. Gib den Session-Code der Lehrkraft ein.
 3. Wähle einen **Teamnamen**, die **Gruppengröße** und eine **Farbe**.
 4. Nach der Registrierung wartest du in der Lobby, bis die Lehrkraft das Spiel startet.
+5. Sobald das Spiel läuft, erscheint ein entsprechender Status-Bildschirm.
 
 ---
 

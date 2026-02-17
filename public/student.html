@@ -41,7 +41,25 @@
             <h2 class="text-3xl font-bold text-blue-400">Team bereit!</h2>
             <div id="teamSummary" class="bg-slate-700 p-4 rounded-lg inline-block text-left"></div>
         </div>
+
+        <!-- Phase 4: Game Running (Placeholder) -->
+        <div id="gamePhase" class="hidden text-center space-y-8 py-8">
+            <div class="inline-block p-4 bg-blue-900/30 rounded-full animate-pulse border-4 border-blue-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.673.337a4 4 0 01-2.574.344l-2.387-.477a2 2 0 00-1.022.547l-1.5 1.5a2 2 0 00-.547 1.022l-.477 2.387a2 2 0 001.5 2.387l2.387.477a2 2 0 001.022-.547l1.5-1.5a2 2 0 00.547-1.022l.477-2.387a2 2 0 00-1.5-2.387l-2.387-.477a2 2 0 00-1.022.547l-1.5 1.5a2 2 0 00-.547 1.022l-.477 2.387a2 2 0 001.5 2.387l2.387.477a2 2 0 001.022-.547l1.5-1.5z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                </svg>
+            </div>
+            <div>
+                <h2 class="text-4xl font-black text-blue-400 mb-2 uppercase">Forschung läuft...</h2>
+                <p class="text-slate-400">Nutzt euer physisches Spielmaterial, um die Aufgaben zu lösen!</p>
+            </div>
+            <div class="bg-slate-700/50 p-4 rounded-xl border border-slate-600">
+                <p class="text-sm text-slate-300 italic">Eure Lehrkraft sieht euren Fortschritt im Dashboard.</p>
+            </div>
+        </div>
     </div>
+    <script src="/socket.io/socket.io.js"></script>
     <script src="/js/student.js"></script>
 </body>
 </html>

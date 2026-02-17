@@ -17,6 +17,16 @@ async function loadActiveSession() {
         document.getElementById('noActiveSessionContainer').classList.add('hidden');
         document.getElementById('sessionCodeDisplay').textContent = data.session.code;
         document.getElementById('updateMaxTeams').value = data.session.max_teams;
+
+        // Show correct view based on game_status
+        if (data.session.game_status === 'running') {
+            document.getElementById('lobbyView').classList.add('hidden');
+            document.getElementById('gameView').classList.remove('hidden');
+        } else {
+            document.getElementById('lobbyView').classList.remove('hidden');
+            document.getElementById('gameView').classList.add('hidden');
+        }
+
         const teamList = document.getElementById('teamList');
         teamList.innerHTML = '';
         data.teams.forEach(addTeamCard);
@@ -112,6 +122,27 @@ document.getElementById('updateLimitBtn').addEventListener('click', async () => 
     const data = await res.json();
     if (res.ok) alert('Limit aktualisiert');
     else alert(data.error || 'Fehler beim Aktualisieren');
+});
+
+document.getElementById('startGameBtn').addEventListener('click', async () => {
+    const res = await fetch('/api/sessions/active/start', { method: 'POST' });
+    if (res.ok) {
+        document.getElementById('lobbyView').classList.add('hidden');
+        document.getElementById('gameView').classList.remove('hidden');
+    } else {
+        alert('Fehler beim Starten des Spiels');
+    }
+});
+
+document.getElementById('endGameBtn').addEventListener('click', async () => {
+    if (!confirm('Möchtest du das Spiel beenden? Alle Schüler werden in die Lobby zurückgeworfen.')) return;
+    const res = await fetch('/api/sessions/active/end', { method: 'POST' });
+    if (res.ok) {
+        document.getElementById('lobbyView').classList.remove('hidden');
+        document.getElementById('gameView').classList.add('hidden');
+    } else {
+        alert('Fehler beim Beenden des Spiels');
+    }
 });
 document.getElementById('closeSessionBtn').addEventListener('click', async () => {
     if (!confirm('Session beenden?')) return;

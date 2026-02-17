@@ -16,6 +16,7 @@ db.serialize(() => {
         teacher_id INTEGER NOT NULL,
         code TEXT UNIQUE NOT NULL,
         status TEXT DEFAULT 'active',
+        game_status TEXT DEFAULT 'waiting', -- 'waiting' or 'running'
         max_teams INTEGER DEFAULT 5,
         created_at DATETIME,
         closed_at DATETIME,

@@ -133,7 +133,7 @@ app.post('/api/join', async (req, res) => {
     try {
         const session = await dbAsync.get('SELECT * FROM sessions WHERE code = ? AND status = "active"', [code.toUpperCase()]);
         if (!session) return res.status(404).json({ error: 'Session nicht gefunden oder abgelaufen' });
-        res.json({ success: true, sessionId: session.id, maxTeams: session.max_teams });
+        res.json({ success: true, sessionId: session.id, maxTeams: session.max_teams, gameStatus: session.game_status });
     } catch (err) {
         res.status(500).json({ error: 'Datenbankfehler' });
     }
@@ -180,6 +180,40 @@ app.patch('/api/sessions/active/limit', isAuthenticated, async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: 'Fehler beim Aktualisieren des Limits' });
+    }
+});
+
+// Start Game (Teacher)
+app.post('/api/sessions/active/start', isAuthenticated, async (req, res) => {
+    try {
+        const session = await dbAsync.get('SELECT id FROM sessions WHERE teacher_id = ? AND status = "active"', [req.session.teacherId]);
+        if (!session) return res.status(404).json({ error: 'Keine aktive Session gefunden' });
+
+        await dbAsync.run('UPDATE sessions SET game_status = "running" WHERE id = ?', [session.id]);
+
+        // Notify all students in this session
+        io.to(`session_${session.id}`).emit('gameStarted');
+
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Fehler beim Starten des Spiels' });
+    }
+});
+
+// End Game (Teacher)
+app.post('/api/sessions/active/end', isAuthenticated, async (req, res) => {
+    try {
+        const session = await dbAsync.get('SELECT id FROM sessions WHERE teacher_id = ? AND status = "active"', [req.session.teacherId]);
+        if (!session) return res.status(404).json({ error: 'Keine aktive Session gefunden' });
+
+        await dbAsync.run('UPDATE sessions SET game_status = "waiting" WHERE id = ?', [session.id]);
+
+        // Notify all students in this session
+        io.to(`session_${session.id}`).emit('gameEnded');
+
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Fehler beim Beenden des Spiels' });
     }
 });
 
