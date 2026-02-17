@@ -36,22 +36,39 @@ Erstelle im Hauptverzeichnis eine Datei namens `.env` (falls nicht vorhanden) un
 ```env
 SESSION_SECRET=weltenretter-secret-2024
 PORT=3000
+
+# E-Mail Versand (optional für Registrierung)
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=user@example.com
+SMTP_PASS=password
 ```
 - `SESSION_SECRET`: Ein beliebiges Passwort zur Absicherung der Login-Sessions.
 - `PORT`: Der Port, auf dem der Server laufen soll (Standard: 3000).
 
 ---
 
-## 🔐 Lehrer-Account erstellen
+## 🔐 Lehrer-Account & Registrierung
 
-Die App hat keine öffentliche Registrierung für Lehrer. Accounts müssen manuell über ein Skript erstellt werden:
+### Test-Account
+Zum schnellen Testen ist bereits ein Account hinterlegt:
+- **Benutzer:** `test`
+- **Passwort:** `test`
 
+### Selbst-Registrierung (E-Mail)
+Lehrkräfte können sich über die Login-Seite selbst registrieren.
+1. Klicke auf "Registrieren".
+2. Gib deine E-Mail-Adresse ein.
+3. Du erhältst einen 6-stelligen Code per E-Mail, der als Passwort dient.
+*Hinweis: Ohne SMTP-Konfiguration in der `.env` wird keine echte Mail versandt. Der Code erscheint dann in der Server-Konsole.*
+
+### Manueller Account (CLI)
+Accounts können weiterhin manuell über ein Skript erstellt werden:
 1. Öffne dein Terminal im Projektordner.
-2. Führe den folgenden Befehl aus (ersetze `<username>` und `<password>`):
+2. Führe den folgenden Befehl aus:
    ```bash
    node add_teacher.js meinName meinPasswort123
    ```
-3. Du erhältst eine Bestätigung: `Lehrer meinName erfolgreich erstellt!`.
 
 ---
 
@@ -83,16 +100,16 @@ npm run dev
 2. Logge dich mit deinem erstellten Account ein.
 3. Klicke auf **"Neue Session starten"**.
 4. Teile den **Session-Code** (z.B. `AB12CD`) deiner Klasse mit.
-5. Im Dashboard siehst du live, welche Teams beitreten. Du kannst das Team-Limit jederzeit anpassen.
-6. Klicke auf **"Spiel jetzt starten!"**, um alle angemeldeten Teams in den Spielmodus zu versetzen.
-7. Am Ende des Spiels kannst du über **"Spiel beenden"** alle Schüler zurückwerfen.
+5. Im Dashboard siehst du live, welche Teams beitreten. Du kannst das Team-Limit anpassen oder Teams löschen.
+6. Jedes Team hat einen eigenen **Team-Code**. Sollte ein Schüler die App schließen, kann er über diesen Code wieder seinem Team beitreten.
+7. Klicke auf **"Spiel jetzt starten!"**, um alle angemeldeten Teams in den Spielmodus zu versetzen.
+8. Sessions können über **"Session beenden"** archiviert und später über die Historie mit **"Fortsetzen"** wieder reaktiviert werden.
 
 ### Für Schüler
-1. Gehe auf die Startseite oder direkt auf [http://localhost:3000/student.html](http://localhost:3000/student.html).
-2. Gib den Session-Code der Lehrkraft ein.
-3. Wähle einen **Teamnamen**, die **Gruppengröße** und eine **Farbe**.
-4. Nach der Registrierung wartest du in der Lobby, bis die Lehrkraft das Spiel startet.
-5. Sobald das Spiel läuft, erscheint ein entsprechender Status-Bildschirm.
+1. Gehe auf [http://localhost:3000/student.html](http://localhost:3000/student.html).
+2. **Neues Team:** Gib den Session-Code ein, wähle Name, Größe und eine freie Farbe.
+3. **Wieder beitreten:** Klicke auf "Bestehendem Team wieder beitreten" und gib deinen Team-Code ein.
+4. Warte in der Lobby, bis die Lehrkraft das Spiel startet.
 
 ---
 

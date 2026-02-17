@@ -1,4 +1,5 @@
 const socket = io();
+
 async function checkAuth() {
     const res = await fetch('/api/me');
     const data = await res.json();
@@ -9,6 +10,7 @@ async function checkAuth() {
         loadHistory();
     }
 }
+
 async function loadActiveSession() {
     const res = await fetch('/api/sessions/active');
     const data = await res.json();
@@ -18,7 +20,6 @@ async function loadActiveSession() {
         document.getElementById('sessionCodeDisplay').textContent = data.session.code;
         document.getElementById('updateMaxTeams').value = data.session.max_teams;
 
-        // Show correct view based on game_status
         if (data.session.game_status === 'running') {
             document.getElementById('lobbyView').classList.add('hidden');
             document.getElementById('gameView').classList.remove('hidden');
@@ -36,28 +37,61 @@ async function loadActiveSession() {
         document.getElementById('noActiveSessionContainer').classList.remove('hidden');
     }
 }
+
 function addTeamCard(team) {
     const teamList = document.getElementById('teamList');
     const card = document.createElement('div');
-    card.className = 'bg-slate-700 border-l-4 p-4 rounded-r-lg shadow flex items-center justify-between';
+    card.id = `team-card-${team.id}`;
+    card.className = 'bg-slate-700 border-l-4 p-4 rounded-r-lg shadow flex items-center justify-between group';
     card.style.borderLeftColor = team.color;
+
     const content = document.createElement('div');
     const h4 = document.createElement('h4');
     h4.className = 'font-bold text-lg';
     h4.textContent = team.name;
+
     const p = document.createElement('p');
     p.className = 'text-xs text-slate-400';
-    p.textContent = `Beigetreten: ${new Date(team.created_at).toLocaleTimeString()}`;
+    p.innerHTML = `Code: <span class="text-white font-mono font-bold">${team.team_code || '---'}</span> | Größe: ${team.group_size}`;
+
     content.appendChild(h4);
     content.appendChild(p);
-    const color = document.createElement('div');
-    color.className = 'w-4 h-4 rounded-full';
-    color.style.backgroundColor = team.color;
+
+    const actions = document.createElement('div');
+    actions.className = 'flex items-center gap-3';
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-500 hover:text-red-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+    `;
+    deleteBtn.onclick = () => deleteTeam(team.id, team.name);
+
+    const colorCircle = document.createElement('div');
+    colorCircle.className = 'w-4 h-4 rounded-full';
+    colorCircle.style.backgroundColor = team.color;
+
+    actions.appendChild(deleteBtn);
+    actions.appendChild(colorCircle);
+
     card.appendChild(content);
-    card.appendChild(color);
+    card.appendChild(actions);
     teamList.appendChild(card);
 }
+
+async function deleteTeam(id, name) {
+    if (!confirm(`Team "${name}" wirklich löschen?`)) return;
+    const res = await fetch(`/api/teams/${id}`, { method: 'DELETE' });
+    if (!res.ok) alert('Fehler beim Löschen');
+}
+
 socket.on('teamCreated', addTeamCard);
+socket.on('teamDeleted', (id) => {
+    const card = document.getElementById(`team-card-${id}`);
+    if (card) card.remove();
+});
+
 async function loadHistory() {
     const res = await fetch('/api/sessions/history');
     const data = await res.json();
@@ -66,43 +100,63 @@ async function loadHistory() {
     data.sessions.forEach(session => {
         const tr = document.createElement('tr');
         tr.className = 'border-b border-slate-700 hover:bg-slate-750';
-        tr.innerHTML = `<td class="p-4 text-sm">${new Date(session.created_at).toLocaleString()}</td>
+        tr.innerHTML = `
+            <td class="p-4 text-sm">${new Date(session.created_at).toLocaleString()}</td>
             <td class="p-4 font-mono font-bold">${session.code}</td>
             <td class="p-4">${session.max_teams}</td>
             <td class="p-4"><span class="bg-slate-600 px-2 py-1 rounded text-xs">Beendet</span></td>
-            <td class="p-4"><button onclick="viewDetails(${session.id}, '${session.code}')" class="text-blue-400 hover:underline">Details</button></td>`;
+            <td class="p-4 flex gap-4">
+                <button onclick="viewDetails(${session.id}, '${session.code}')" class="text-blue-400 hover:underline">Details</button>
+                <button onclick="reopenSession(${session.id})" class="text-green-400 hover:underline">Fortsetzen</button>
+            </td>
+        `;
         tbody.appendChild(tr);
     });
 }
+
+async function reopenSession(id) {
+    if (!confirm('Diese Session wieder eröffnen? Eine eventuell aktive Session wird dabei geschlossen.')) return;
+    const res = await fetch(`/api/sessions/${id}/reopen`, { method: 'POST' });
+    if (res.ok) loadActiveSession();
+    else alert('Fehler beim Wiedereröffnen');
+}
+
 async function viewDetails(id, code) {
     const res = await fetch(`/api/sessions/${id}/teams`);
     const data = await res.json();
     document.getElementById('modalTitle').textContent = `Teams in Session ${code}`;
     const content = document.getElementById('modalContent');
     content.innerHTML = '';
-    if (data.teams.length === 0) content.innerHTML = '<p class="text-slate-400">Keine Teams.</p>';
-    else {
+
+    if (data.teams.length === 0) {
+        content.innerHTML = '<p class="text-slate-400">Keine Teams gefunden.</p>';
+    } else {
         const div = document.createElement('div');
-        div.className = 'space-y-2';
+        div.className = 'grid grid-cols-2 gap-4';
         data.teams.forEach(team => {
             const item = document.createElement('div');
-            item.className = 'flex items-center gap-3 p-2 bg-slate-700 rounded';
-            const col = document.createElement('div');
-            col.className = 'w-4 h-4 rounded-full';
-            col.style.backgroundColor = team.color;
-            const span = document.createElement('span');
-            span.className = 'font-bold';
-            span.textContent = team.name;
-            item.appendChild(col);
-            item.appendChild(span);
+            item.className = 'p-3 bg-slate-700 rounded-lg border-l-4';
+            item.style.borderLeftColor = team.color;
+
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'font-bold';
+            nameDiv.textContent = team.name;
+
+            const sizeDiv = document.createElement('div');
+            sizeDiv.className = 'text-xs text-slate-400';
+            sizeDiv.textContent = `Größe: ${team.group_size}`;
+
+            item.appendChild(nameDiv);
+            item.appendChild(sizeDiv);
             div.appendChild(item);
         });
         content.appendChild(div);
     }
     document.getElementById('detailsModal').classList.remove('hidden');
 }
+
 document.getElementById('startSessionBtn').addEventListener('click', async () => {
-    const maxTeams = document.getElementById('maxTeams').value;
+    const maxTeams = parseInt(document.getElementById('maxTeams').value);
     const res = await fetch('/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -119,9 +173,11 @@ document.getElementById('updateLimitBtn').addEventListener('click', async () => 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ maxTeams })
     });
-    const data = await res.json();
     if (res.ok) alert('Limit aktualisiert');
-    else alert(data.error || 'Fehler beim Aktualisieren');
+    else {
+        const data = await res.json();
+        alert(data.error || 'Fehler beim Aktualisieren');
+    }
 });
 
 document.getElementById('startGameBtn').addEventListener('click', async () => {
@@ -129,29 +185,28 @@ document.getElementById('startGameBtn').addEventListener('click', async () => {
     if (res.ok) {
         document.getElementById('lobbyView').classList.add('hidden');
         document.getElementById('gameView').classList.remove('hidden');
-    } else {
-        alert('Fehler beim Starten des Spiels');
-    }
+    } else alert('Fehler beim Starten');
 });
 
 document.getElementById('endGameBtn').addEventListener('click', async () => {
-    if (!confirm('Möchtest du das Spiel beenden? Alle Schüler werden in die Lobby zurückgeworfen.')) return;
+    if (!confirm('Spiel beenden?')) return;
     const res = await fetch('/api/sessions/active/end', { method: 'POST' });
     if (res.ok) {
         document.getElementById('lobbyView').classList.remove('hidden');
         document.getElementById('gameView').classList.add('hidden');
-    } else {
-        alert('Fehler beim Beenden des Spiels');
-    }
+    } else alert('Fehler beim Beenden');
 });
+
 document.getElementById('closeSessionBtn').addEventListener('click', async () => {
-    if (!confirm('Session beenden?')) return;
+    if (!confirm('Session wirklich schließen?')) return;
     await fetch('/api/sessions/close', { method: 'POST' });
     loadActiveSession();
     loadHistory();
 });
+
 document.getElementById('logoutBtn').addEventListener('click', async () => {
     await fetch('/api/logout', { method: 'POST' });
     window.location.href = '/login.html';
 });
+
 checkAuth();

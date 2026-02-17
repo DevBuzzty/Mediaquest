@@ -29,12 +29,14 @@ db.serialize(() => {
         name TEXT NOT NULL,
         color TEXT NOT NULL,
         group_size INTEGER DEFAULT 1,
+        team_code TEXT,
         created_at DATETIME,
         FOREIGN KEY (session_id) REFERENCES sessions(id)
     )`);
 
     // Indexes for performance
     db.run(`CREATE INDEX IF NOT EXISTS idx_sessions_code ON sessions(code)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_teams_code ON teams(team_code)`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_sessions_teacher ON sessions(teacher_id)`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_teams_session ON teams(session_id)`);
 });

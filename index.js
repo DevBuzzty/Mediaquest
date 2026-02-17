@@ -5,7 +5,8 @@ const { Server } = require('socket.io');
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
-const { dbAsync } = require('./db');
+const nodemailer = require('nodemailer');
+const { dbAsync, db } = require('./db');
 const { containsBadWords } = require('./filter');
 const path = require('path');
 
@@ -14,6 +15,32 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const PORT = process.env.PORT || 3000;
+
+// Email Transporter (Nodemailer)
+const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.example.com',
+    port: process.env.SMTP_PORT || 587,
+    secure: false, // true for 465, false for other ports
+    auth: {
+        user: process.env.SMTP_USER || 'user@example.com',
+        pass: process.env.SMTP_PASS || 'password'
+    }
+});
+
+// Ensure test account exists
+async function ensureTestAccount() {
+    try {
+        const testUser = await dbAsync.get('SELECT * FROM teachers WHERE username = ?', ['test']);
+        if (!testUser) {
+            const hashedPass = await bcrypt.hash('test', 10);
+            await dbAsync.run('INSERT INTO teachers (username, password) VALUES (?, ?)', ['test', hashedPass]);
+            console.log('Test account (test:test) created.');
+        }
+    } catch (err) {
+        console.error('Error creating test account:', err);
+    }
+}
+ensureTestAccount();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -33,6 +60,47 @@ function isAuthenticated(req, res, next) {
 }
 
 // Routes
+app.post('/api/register', async (req, res) => {
+    const { email } = req.body;
+    if (!email || !email.includes('@')) {
+        return res.status(400).json({ error: 'Ungültige E-Mail-Adresse' });
+    }
+
+    try {
+        const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+        const hashedPassword = await bcrypt.hash(code, 10);
+
+        // Update or Insert
+        const existing = await dbAsync.get('SELECT id FROM teachers WHERE username = ?', [email]);
+        if (existing) {
+            await dbAsync.run('UPDATE teachers SET password = ? WHERE id = ?', [hashedPassword, existing.id]);
+        } else {
+            await dbAsync.run('INSERT INTO teachers (username, password) VALUES (?, ?)', [email, hashedPassword]);
+        }
+
+        // Send Email
+        console.log(`[DEBUG] Registrierung für ${email}: Code = ${code}`);
+
+        try {
+            await transporter.sendMail({
+                from: `"Weltenretter App" <${process.env.SMTP_USER}>`,
+                to: email,
+                subject: 'Dein Login-Code für Weltenretter',
+                text: `Hallo!\n\nDein Login-Code für die Weltenretter App lautet: ${code}\n\nNutze diesen Code als Passwort zusammen mit deiner E-Mail-Adresse.\n\nViel Spaß!`,
+                html: `<p>Hallo!</p><p>Dein Login-Code für die Weltenretter App lautet:</p><h2 style="color: #3b82f6;">${code}</h2><p>Nutze diesen Code als Passwort zusammen mit deiner E-Mail-Adresse.</p><p>Viel Spaß!</p>`
+            });
+            res.json({ success: true, message: 'Code wurde per E-Mail gesendet.' });
+        } catch (mailErr) {
+            console.warn('E-Mail Versand fehlgeschlagen, aber Account wurde erstellt/aktualisiert. Code:', code);
+            // If mail fails but we are in dev/local, we might still want to succeed or at least tell the user.
+            res.json({ success: true, message: 'Account aktualisiert. (E-Mail konnte nicht gesendet werden, siehe Server-Konsole)' });
+        }
+    } catch (err) {
+        console.error('Registration error:', err);
+        res.status(500).json({ error: 'Fehler bei der Registrierung oder E-Mail-Versand' });
+    }
+});
+
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
@@ -116,6 +184,23 @@ app.get('/api/sessions/history', isAuthenticated, async (req, res) => {
     }
 });
 
+app.post('/api/sessions/:id/reopen', isAuthenticated, async (req, res) => {
+    const sessionId = req.params.id;
+    try {
+        const teacherId = req.session.teacherId;
+
+        // Close any currently active session first
+        await dbAsync.run('UPDATE sessions SET status = "closed", closed_at = ? WHERE teacher_id = ? AND status = "active"', [new Date().toISOString(), teacherId]);
+
+        // Reopen the requested session
+        await dbAsync.run('UPDATE sessions SET status = "active", closed_at = NULL WHERE id = ? AND teacher_id = ?', [sessionId, teacherId]);
+
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Fehler beim Wiedereröffnen' });
+    }
+});
+
 app.get('/api/sessions/:id/teams', isAuthenticated, async (req, res) => {
     const sessionId = req.params.id;
     try {
@@ -128,12 +213,43 @@ app.get('/api/sessions/:id/teams', isAuthenticated, async (req, res) => {
     }
 });
 
+app.post('/api/rejoin', async (req, res) => {
+    const { teamCode } = req.body;
+    try {
+        const team = await dbAsync.get(`
+            SELECT t.*, s.status as session_status, s.game_status, s.code as session_code
+            FROM teams t
+            JOIN sessions s ON t.session_id = s.id
+            WHERE t.team_code = ? AND s.status = 'active'
+        `, [teamCode.toUpperCase()]);
+
+        if (!team) return res.status(404).json({ error: 'Team-Code ungültig oder Session beendet.' });
+
+        res.json({
+            success: true,
+            sessionId: team.session_id,
+            teamId: team.id,
+            name: team.name,
+            color: team.color,
+            groupSize: team.group_size,
+            gameStatus: team.game_status,
+            sessionCode: team.session_code
+        });
+    } catch (err) {
+        res.status(500).json({ error: 'Datenbankfehler' });
+    }
+});
+
 app.post('/api/join', async (req, res) => {
     const { code } = req.body;
     try {
         const session = await dbAsync.get('SELECT * FROM sessions WHERE code = ? AND status = "active"', [code.toUpperCase()]);
         if (!session) return res.status(404).json({ error: 'Session nicht gefunden oder abgelaufen' });
-        res.json({ success: true, sessionId: session.id, maxTeams: session.max_teams, gameStatus: session.game_status });
+
+        const teams = await dbAsync.all('SELECT color FROM teams WHERE session_id = ?', [session.id]);
+        const takenColors = teams.map(t => t.color);
+
+        res.json({ success: true, sessionId: session.id, maxTeams: session.max_teams, gameStatus: session.game_status, takenColors });
     } catch (err) {
         res.status(500).json({ error: 'Datenbankfehler' });
     }
@@ -146,21 +262,58 @@ app.post('/api/teams', async (req, res) => {
         return res.status(400).json({ error: 'Unangemessener Teamname' });
     }
 
+    if (groupSize > 10) {
+        return res.status(400).json({ error: 'Maximale Teamgröße ist 10 Personen.' });
+    }
+
     try {
         const session = await dbAsync.get('SELECT max_teams FROM sessions WHERE id = ? AND status = "active"', [sessionId]);
         if (!session) return res.status(404).json({ error: 'Session nicht gefunden' });
 
         const row = await dbAsync.get('SELECT COUNT(*) as count FROM teams WHERE session_id = ?', [sessionId]);
-        if (row.count >= session.max_teams) {
-            return res.status(400).json({ error: 'Maximale Teamanzahl erreicht' });
+        if (row.count >= Math.min(session.max_teams, 10)) {
+            return res.status(400).json({ error: 'Maximale Teamanzahl erreicht (max. 10)' });
+        }
+
+        // Check if color is already taken
+        const colorTaken = await dbAsync.get('SELECT id FROM teams WHERE session_id = ? AND color = ?', [sessionId, color]);
+        if (colorTaken) {
+            return res.status(400).json({ error: 'Diese Farbe ist bereits vergeben.' });
         }
 
         const createdAt = new Date().toISOString();
-        const result = await dbAsync.run('INSERT INTO teams (session_id, name, color, group_size, created_at) VALUES (?, ?, ?, ?, ?)', [sessionId, name, color, groupSize || 1, createdAt]);
+        const teamCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+        const result = await dbAsync.run(
+            'INSERT INTO teams (session_id, name, color, group_size, team_code, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+            [sessionId, name, color, groupSize || 1, teamCode, createdAt]
+        );
+
         io.to(`session_${sessionId}`).emit('teamCreated', { id: result.lastID, name, color, group_size: groupSize, created_at: createdAt });
-        res.json({ success: true, teamId: result.lastID });
+        io.to(`session_${sessionId}`).emit('colorPicked', color);
+
+        res.json({ success: true, teamId: result.lastID, teamCode: teamCode });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ error: 'Fehler bei der Teamerstellung' });
+    }
+});
+
+// Delete Team (Teacher)
+app.delete('/api/teams/:id', isAuthenticated, async (req, res) => {
+    const teamId = req.params.id;
+    try {
+        const team = await dbAsync.get('SELECT t.* FROM teams t JOIN sessions s ON t.session_id = s.id WHERE t.id = ? AND s.teacher_id = ?', [teamId, req.session.teacherId]);
+        if (!team) return res.status(404).json({ error: 'Team nicht gefunden' });
+
+        await dbAsync.run('DELETE FROM teams WHERE id = ?', [teamId]);
+
+        io.to(`session_${team.session_id}`).emit('teamDeleted', teamId);
+        io.to(`session_${team.session_id}`).emit('colorFreed', team.color);
+
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Fehler beim Löschen des Teams' });
     }
 });
 

@@ -14,6 +14,21 @@
                 <input type="text" id="sessionCodeInput" placeholder="Session-Code" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-3 px-4 text-center text-2xl font-mono uppercase">
                 <div id="joinError" class="text-red-500 text-sm hidden text-center"></div>
                 <button id="joinBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl text-lg">Los geht's!</button>
+                <div class="text-center mt-6">
+                    <button onclick="document.getElementById('joinPhase').classList.add('hidden'); document.getElementById('rejoinPhase').classList.remove('hidden');" class="text-slate-400 hover:text-white text-sm underline decoration-slate-600 underline-offset-4">Bestehendem Team wieder beitreten</button>
+                </div>
+            </div>
+        </div>
+        <div id="rejoinPhase" class="hidden">
+            <h2 class="text-3xl font-bold mb-6 text-center text-blue-500">Wieder beitreten</h2>
+            <div class="space-y-4">
+                <p class="text-sm text-slate-400 text-center">Gib den Team-Code ein, den du von deiner Lehrkraft erhalten hast.</p>
+                <input type="text" id="teamCodeInput" placeholder="Team-Code" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-3 px-4 text-center text-2xl font-mono uppercase">
+                <div id="rejoinError" class="text-red-500 text-sm hidden text-center"></div>
+                <button id="rejoinBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl text-lg">Wieder beitreten</button>
+                <div class="text-center mt-4">
+                    <button onclick="document.getElementById('rejoinPhase').classList.add('hidden'); document.getElementById('joinPhase').classList.remove('hidden');" class="text-slate-400 hover:text-white text-sm">Zurück</button>
+                </div>
             </div>
         </div>
         <div id="createTeamPhase" class="hidden">
@@ -21,17 +36,17 @@
             <div class="space-y-6">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="text-sm text-slate-400">Teamname</label>
-                        <input type="text" id="teamNameInput" maxlength="20" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4">
+                        <label class="block text-sm font-medium text-slate-400 mb-2">Teamname</label>
+                        <input type="text" id="teamNameInput" maxlength="20" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
                     </div>
                     <div>
-                        <label class="text-sm text-slate-400">Gruppengröße</label>
-                        <input type="number" id="groupSizeInput" min="1" max="10" value="1" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4">
+                        <label class="block text-sm font-medium text-slate-400 mb-2">Gruppengröße (max. 10)</label>
+                        <input type="number" id="groupSizeInput" value="1" min="1" max="10" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
                     </div>
                 </div>
                 <div>
                     <label class="block text-sm text-slate-400 mb-3">Teamfarbe</label>
-                    <div class="grid grid-cols-4 gap-4" id="colorPicker"></div>
+                    <div class="grid grid-cols-5 gap-4" id="colorPicker"></div>
                 </div>
                 <div id="createTeamError" class="text-red-500 text-sm hidden text-center"></div>
                 <button id="createTeamBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl text-lg">Start!</button>
@@ -39,10 +54,10 @@
         </div>
         <div id="waitingPhase" class="hidden text-center space-y-6 py-12">
             <h2 class="text-3xl font-bold text-blue-400">Team bereit!</h2>
-            <div id="teamSummary" class="bg-slate-700 p-4 rounded-lg inline-block text-left"></div>
+            <div id="teamSummary" class="bg-slate-700 p-6 rounded-2xl inline-block text-left border border-slate-600 shadow-xl"></div>
         </div>
 
-        <!-- Phase 4: Game Running (Placeholder) -->
+        <!-- Game Phase -->
         <div id="gamePhase" class="hidden text-center space-y-8 py-8">
             <div class="inline-block p-4 bg-blue-900/30 rounded-full animate-pulse border-4 border-blue-500">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
