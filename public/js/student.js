@@ -1,4 +1,4 @@
-const colors = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#f97316', '#a855f7', '#ec4899', '#14b8a6', '#6366f1', '#84cc16', '#f59e0b', '#f43f5e'];
+const colors = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#f97316', '#a855f7', '#ec4899', '#06b6d4'];
 let selectedColor = colors[0];
 let currentSessionId = null;
 let currentGameStatus = 'waiting';
