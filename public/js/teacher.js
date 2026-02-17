@@ -16,6 +16,7 @@ async function loadActiveSession() {
         document.getElementById('activeSessionContainer').classList.remove('hidden');
         document.getElementById('noActiveSessionContainer').classList.add('hidden');
         document.getElementById('sessionCodeDisplay').textContent = data.session.code;
+        document.getElementById('updateMaxTeams').value = data.session.max_teams;
         const teamList = document.getElementById('teamList');
         teamList.innerHTML = '';
         data.teams.forEach(addTeamCard);
@@ -92,12 +93,25 @@ async function viewDetails(id, code) {
 }
 document.getElementById('startSessionBtn').addEventListener('click', async () => {
     const maxTeams = document.getElementById('maxTeams').value;
-    await fetch('/api/sessions', {
+    const res = await fetch('/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ maxTeams })
     });
-    loadActiveSession();
+    if (res.ok) loadActiveSession();
+    else alert('Fehler beim Starten der Session');
+});
+
+document.getElementById('updateLimitBtn').addEventListener('click', async () => {
+    const maxTeams = parseInt(document.getElementById('updateMaxTeams').value);
+    const res = await fetch('/api/sessions/active/limit', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ maxTeams })
+    });
+    const data = await res.json();
+    if (res.ok) alert('Limit aktualisiert');
+    else alert(data.error || 'Fehler beim Aktualisieren');
 });
 document.getElementById('closeSessionBtn').addEventListener('click', async () => {
     if (!confirm('Session beenden?')) return;

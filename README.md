@@ -33,6 +33,7 @@ Die App ist dann unter `http://localhost:3000` erreichbar.
 - **Lehrer-Dashboard:**
   - Login/Logout.
   - Starten einer neuen Spiel-Session mit Session-Code.
+  - **Dynamische Anpassung des Team-Limits** während einer aktiven Session.
   - Echtzeit-Anzeige beigetretener Teams.
   - Einsicht in vergangene Sessions und deren Teams.
 - **Schüler-Interface:**
@@ -40,7 +41,9 @@ Die App ist dann unter `http://localhost:3000` erreichbar.
   - Teamerstellung mit Name, Gruppengröße und Farbwahl.
   - Schimpfwort-Filter für Teamnamen.
 - **Technik:**
-  - Node.js Express Backend.
+  - Node.js Express Backend (Async/Await mit Promise-basiertem DB-Wrapper).
   - Socket.io für Echtzeit-Synchronisation.
-  - SQLite3 für persistente Speicherung.
+  - SQLite3 für persistente Speicherung (indiziert für hohe Performance).
   - Tailwind CSS für ein modernes Dark-Theme.
+  - **Optimierter Schimpfwort-Filter** mit Regex und Leetspeak-Erkennung.
+  - **XSS-Schutz** durch konsequente Daten-Sicherheit im Frontend.

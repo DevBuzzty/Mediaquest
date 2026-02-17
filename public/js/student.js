@@ -16,6 +16,10 @@ if (colorPicker) {
     });
     colorPicker.children[0].style.borderColor = 'white';
 }
+document.getElementById('sessionCodeInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') document.getElementById('joinBtn').click();
+});
+
 document.getElementById('joinBtn').addEventListener('click', async () => {
     const code = document.getElementById('sessionCodeInput').value.trim();
     const res = await fetch('/api/join', {
@@ -34,6 +38,10 @@ document.getElementById('joinBtn').addEventListener('click', async () => {
         err.classList.remove('hidden');
     }
 });
+document.getElementById('teamNameInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') document.getElementById('createTeamBtn').click();
+});
+
 document.getElementById('createTeamBtn').addEventListener('click', async () => {
     const name = document.getElementById('teamNameInput').value.trim();
     const groupSize = document.getElementById('groupSizeInput').value;

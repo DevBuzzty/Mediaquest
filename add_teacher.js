@@ -1,4 +1,4 @@
-const db = require('./db');
+const { dbAsync } = require('./db');
 const bcrypt = require('bcrypt');
 
 async function createTeacher(username, password) {
@@ -8,20 +8,15 @@ async function createTeacher(username, password) {
     }
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
-        db.run('INSERT INTO teachers (username, password) VALUES (?, ?)', [username, hashedPassword], (err) => {
-            if (err) {
-                if (err.message.includes('UNIQUE constraint failed')) {
-                    console.error('Fehler: Benutzername existiert bereits.');
-                } else {
-                    console.error('Fehler beim Erstellen des Lehrers:', err.message);
-                }
-            } else {
-                console.log(`Lehrer ${username} erfolgreich erstellt!`);
-            }
-            process.exit(0);
-        });
-    } catch (error) {
-        console.error('Fehler:', error);
+        await dbAsync.run('INSERT INTO teachers (username, password) VALUES (?, ?)', [username, hashedPassword]);
+        console.log(`Lehrer ${username} erfolgreich erstellt!`);
+        process.exit(0);
+    } catch (err) {
+        if (err.message && err.message.includes('UNIQUE constraint failed')) {
+            console.error('Fehler: Benutzername existiert bereits.');
+        } else {
+            console.error('Fehler beim Erstellen des Lehrers:', err.message || err);
+        }
         process.exit(1);
     }
 }

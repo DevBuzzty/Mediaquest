@@ -31,6 +31,26 @@ db.serialize(() => {
         created_at DATETIME,
         FOREIGN KEY (session_id) REFERENCES sessions(id)
     )`);
+
+    // Indexes for performance
+    db.run(`CREATE INDEX IF NOT EXISTS idx_sessions_code ON sessions(code)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_sessions_teacher ON sessions(teacher_id)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_teams_session ON teams(session_id)`);
 });
 
-module.exports = db;
+// Promise-based wrapper
+const dbAsync = {
+    get: (sql, params = []) => new Promise((res, rej) => {
+        db.get(sql, params, (err, row) => err ? rej(err) : res(row));
+    }),
+    all: (sql, params = []) => new Promise((res, rej) => {
+        db.all(sql, params, (err, rows) => err ? rej(err) : res(rows));
+    }),
+    run: (sql, params = []) => new Promise((res, rej) => {
+        db.run(sql, params, function(err) {
+            err ? rej(err) : res({ lastID: this.lastID, changes: this.changes });
+        });
+    })
+};
+
+module.exports = { db, dbAsync };
