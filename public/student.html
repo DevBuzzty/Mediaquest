@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schüler-Bereich - Weltenretter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex items-center justify-center p-4">
+    <div class="bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-700 w-full max-w-lg">
+        <div id="joinPhase">
+            <h2 class="text-3xl font-bold mb-6 text-center text-blue-500">Session beitreten</h2>
+            <div class="space-y-4">
+                <input type="text" id="sessionCodeInput" placeholder="Session-Code" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-3 px-4 text-center text-2xl font-mono uppercase">
+                <div id="joinError" class="text-red-500 text-sm hidden text-center"></div>
+                <button id="joinBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl text-lg">Los geht's!</button>
+            </div>
+        </div>
+        <div id="createTeamPhase" class="hidden">
+            <h2 class="text-3xl font-bold mb-6 text-center text-blue-500">Team erstellen</h2>
+            <div class="space-y-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-sm text-slate-400">Teamname</label>
+                        <input type="text" id="teamNameInput" maxlength="20" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4">
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-400">Gruppengröße</label>
+                        <input type="number" id="groupSizeInput" min="1" max="10" value="1" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-3">Teamfarbe</label>
+                    <div class="grid grid-cols-4 gap-4" id="colorPicker"></div>
+                </div>
+                <div id="createTeamError" class="text-red-500 text-sm hidden text-center"></div>
+                <button id="createTeamBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl text-lg">Registrieren</button>
+            </div>
+        </div>
+        <div id="waitingPhase" class="hidden text-center space-y-6 py-12">
+            <h2 class="text-3xl font-bold text-blue-400">Team bereit!</h2>
+            <div id="teamSummary" class="bg-slate-700 p-4 rounded-lg inline-block text-left"></div>
+        </div>
+    </div>
+    <script src="/js/student.js"></script>
+</body>
+</html>
