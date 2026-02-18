@@ -38,11 +38,19 @@ SESSION_SECRET=weltenretter-secret-2024
 PORT=3000
 
 # E-Mail Versand (optional für Registrierung)
-SMTP_HOST=smtp.example.com
+SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=user@example.com
-SMTP_PASS=password
+SMTP_USER=deine.email@gmail.com
+SMTP_PASS=dein-app-passwort
 ```
+
+### 📧 Gmail SMTP Einrichtung
+Wenn du Gmail für den E-Mail-Versand nutzen möchtest, folge diesen Schritten:
+1. **2-Faktor-Authentifizierung (2FA)** in deinem Google-Konto aktivieren.
+2. Suche nach **"App-Passwörter"** in den Google-Konto-Einstellungen.
+3. Erstelle ein neues App-Passwort (Wähle "Andere" und nenne es "Weltenretter").
+4. Kopiere das 16-stellige Passwort und füge es bei `SMTP_PASS` in die `.env` ein.
+5. Setze `SMTP_USER` auf deine Gmail-Adresse.
 - `SESSION_SECRET`: Ein beliebiges Passwort zur Absicherung der Login-Sessions.
 - `PORT`: Der Port, auf dem der Server laufen soll (Standard: 3000).
 
