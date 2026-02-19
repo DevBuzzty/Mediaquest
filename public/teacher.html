@@ -52,9 +52,19 @@
                     </div>
                     <div>
                         <h2 class="text-5xl font-black text-green-400 mb-4 uppercase tracking-widest">Das Spiel läuft</h2>
-                        <p class="text-xl text-slate-400">Beobachte deine Teams bei der Forschung...</p>
+                        <p class="text-xl text-slate-400">Aktueller Modus: <span id="activeGameModeDisplay" class="text-blue-400 font-bold uppercase"></span></p>
+                        <p class="text-slate-500 mt-2">Beobachte deine Teams bei der Forschung...</p>
                     </div>
-                    <div class="pt-8">
+                    <div class="pt-8 space-y-4">
+                        <div class="inline-flex items-center gap-4 bg-slate-700/50 p-4 rounded-xl border border-slate-600">
+                            <span class="text-sm font-bold text-blue-400 uppercase tracking-tight">Dev-Modus: Modus live wechseln</span>
+                            <div class="flex gap-2">
+                                <button onclick="changeGameMode('binary')" class="bg-slate-600 hover:bg-blue-600 px-3 py-1 rounded text-xs transition-colors">Swipe</button>
+                                <button onclick="changeGameMode('choice')" class="bg-slate-600 hover:bg-blue-600 px-3 py-1 rounded text-xs transition-colors">Choice</button>
+                                <button onclick="changeGameMode('select')" class="bg-slate-600 hover:bg-blue-600 px-3 py-1 rounded text-xs transition-colors">Select</button>
+                            </div>
+                        </div>
+                        <br>
                         <button id="endGameBtn" class="bg-red-600 hover:bg-red-700 px-8 py-3 rounded-xl font-bold transition-all">
                             Spiel beenden
                         </button>
@@ -66,9 +76,19 @@
             <div class="bg-slate-800 rounded-2xl p-12 border border-slate-700 shadow-lg text-center">
                 <h2 class="text-3xl font-bold mb-4">Keine aktive Session</h2>
                 <div class="flex flex-col items-center gap-4">
-                    <div class="flex items-center gap-2">
-                        <label for="maxTeams">Anzahl Teams (max):</label>
-                        <input type="number" id="maxTeams" value="5" min="1" max="10" class="bg-slate-700 border border-slate-600 rounded px-2 py-1 w-16">
+                    <div class="flex flex-col md:flex-row items-center gap-6">
+                        <div class="flex items-center gap-2">
+                            <label for="maxTeams" class="text-slate-400">Anzahl Teams (max):</label>
+                            <input type="number" id="maxTeams" value="5" min="1" max="10" class="bg-slate-700 border border-slate-600 rounded px-2 py-1 w-16">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label for="gameType" class="text-slate-400">Spielmodus:</label>
+                            <select id="gameType" class="bg-slate-700 border border-slate-600 rounded px-3 py-1">
+                                <option value="binary">Binary Swipe</option>
+                                <option value="choice">Multiple Choice</option>
+                                <option value="select">Multiple Select</option>
+                            </select>
+                        </div>
                     </div>
                     <button id="startSessionBtn" class="bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded-xl font-bold text-xl transition-all">Neue Session starten</button>
                 </div>

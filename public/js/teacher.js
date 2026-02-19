@@ -23,6 +23,7 @@ async function loadActiveSession() {
         if (data.session.game_status === 'running') {
             document.getElementById('lobbyView').classList.add('hidden');
             document.getElementById('gameView').classList.remove('hidden');
+            document.getElementById('activeGameModeDisplay').textContent = data.session.game_type;
         } else {
             document.getElementById('lobbyView').classList.remove('hidden');
             document.getElementById('gameView').classList.add('hidden');
@@ -157,10 +158,11 @@ async function viewDetails(id, code) {
 
 document.getElementById('startSessionBtn').addEventListener('click', async () => {
     const maxTeams = parseInt(document.getElementById('maxTeams').value);
+    const gameType = document.getElementById('gameType').value;
     const res = await fetch('/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ maxTeams })
+        body: JSON.stringify({ maxTeams, gameType })
     });
     if (res.ok) loadActiveSession();
     else alert('Fehler beim Starten der Session');
@@ -183,8 +185,7 @@ document.getElementById('updateLimitBtn').addEventListener('click', async () => 
 document.getElementById('startGameBtn').addEventListener('click', async () => {
     const res = await fetch('/api/sessions/active/start', { method: 'POST' });
     if (res.ok) {
-        document.getElementById('lobbyView').classList.add('hidden');
-        document.getElementById('gameView').classList.remove('hidden');
+        loadActiveSession();
     } else alert('Fehler beim Starten');
 });
 
@@ -203,6 +204,19 @@ document.getElementById('closeSessionBtn').addEventListener('click', async () =>
     loadActiveSession();
     loadHistory();
 });
+
+async function changeGameMode(mode) {
+    const res = await fetch('/api/sessions/active/mode', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameType: mode })
+    });
+    if (res.ok) {
+        document.getElementById('activeGameModeDisplay').textContent = mode;
+    } else {
+        alert('Fehler beim Modus-Wechsel');
+    }
+}
 
 document.getElementById('logoutBtn').addEventListener('click', async () => {
     await fetch('/api/logout', { method: 'POST' });

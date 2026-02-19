@@ -17,6 +17,7 @@ db.serialize(() => {
         code TEXT UNIQUE NOT NULL,
         status TEXT DEFAULT 'active',
         game_status TEXT DEFAULT 'waiting', -- 'waiting' or 'running'
+        game_type TEXT DEFAULT 'binary', -- 'binary', 'choice', 'select'
         max_teams INTEGER DEFAULT 5,
         created_at DATETIME,
         closed_at DATETIME,

@@ -135,7 +135,7 @@ app.get('/api/me', (req, res) => {
 
 app.post('/api/sessions', isAuthenticated, async (req, res) => {
     const teacherId = req.session.teacherId;
-    const { maxTeams } = req.body;
+    const { maxTeams, gameType } = req.body;
 
     try {
         const activeSession = await dbAsync.get('SELECT id FROM sessions WHERE teacher_id = ? AND status = "active"', [teacherId]);
@@ -146,7 +146,7 @@ app.post('/api/sessions', isAuthenticated, async (req, res) => {
         const code = Math.random().toString(36).substring(2, 8).toUpperCase();
         const createdAt = new Date().toISOString();
 
-        await dbAsync.run('INSERT INTO sessions (teacher_id, code, max_teams, created_at) VALUES (?, ?, ?, ?)', [teacherId, code, maxTeams || 5, createdAt]);
+        await dbAsync.run('INSERT INTO sessions (teacher_id, code, max_teams, game_type, created_at) VALUES (?, ?, ?, ?, ?)', [teacherId, code, maxTeams || 5, gameType || 'binary', createdAt]);
         res.json({ success: true, code: code });
     } catch (err) {
         res.status(500).json({ error: 'Fehler beim Erstellen der Session' });
@@ -217,7 +217,7 @@ app.post('/api/rejoin', async (req, res) => {
     const { teamCode } = req.body;
     try {
         const team = await dbAsync.get(`
-            SELECT t.*, s.status as session_status, s.game_status, s.code as session_code
+            SELECT t.*, s.status as session_status, s.game_status, s.game_type, s.code as session_code
             FROM teams t
             JOIN sessions s ON t.session_id = s.id
             WHERE t.team_code = ? AND s.status = 'active'
@@ -233,6 +233,7 @@ app.post('/api/rejoin', async (req, res) => {
             color: team.color,
             groupSize: team.group_size,
             gameStatus: team.game_status,
+            gameType: team.game_type,
             sessionCode: team.session_code
         });
     } catch (err) {
@@ -249,7 +250,14 @@ app.post('/api/join', async (req, res) => {
         const teams = await dbAsync.all('SELECT color FROM teams WHERE session_id = ?', [session.id]);
         const takenColors = teams.map(t => t.color);
 
-        res.json({ success: true, sessionId: session.id, maxTeams: session.max_teams, gameStatus: session.game_status, takenColors });
+        res.json({
+            success: true,
+            sessionId: session.id,
+            maxTeams: session.max_teams,
+            gameStatus: session.game_status,
+            gameType: session.game_type,
+            takenColors
+        });
     } catch (err) {
         res.status(500).json({ error: 'Datenbankfehler' });
     }
@@ -339,17 +347,35 @@ app.patch('/api/sessions/active/limit', isAuthenticated, async (req, res) => {
 // Start Game (Teacher)
 app.post('/api/sessions/active/start', isAuthenticated, async (req, res) => {
     try {
-        const session = await dbAsync.get('SELECT id FROM sessions WHERE teacher_id = ? AND status = "active"', [req.session.teacherId]);
+        const session = await dbAsync.get('SELECT id, game_type FROM sessions WHERE teacher_id = ? AND status = "active"', [req.session.teacherId]);
         if (!session) return res.status(404).json({ error: 'Keine aktive Session gefunden' });
 
         await dbAsync.run('UPDATE sessions SET game_status = "running" WHERE id = ?', [session.id]);
 
         // Notify all students in this session
-        io.to(`session_${session.id}`).emit('gameStarted');
+        io.to(`session_${session.id}`).emit('gameStarted', { gameType: session.game_type });
 
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: 'Fehler beim Starten des Spiels' });
+    }
+});
+
+// Live Change Game Mode (Teacher/Dev)
+app.patch('/api/sessions/active/mode', isAuthenticated, async (req, res) => {
+    const { gameType } = req.body;
+    try {
+        const session = await dbAsync.get('SELECT id FROM sessions WHERE teacher_id = ? AND status = "active"', [req.session.teacherId]);
+        if (!session) return res.status(404).json({ error: 'Keine aktive Session gefunden' });
+
+        await dbAsync.run('UPDATE sessions SET game_type = ? WHERE id = ?', [gameType, session.id]);
+
+        // Notify all students in this session
+        io.to(`session_${session.id}`).emit('gameModeUpdated', { gameType });
+
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Fehler beim Ändern des Spielmodus' });
     }
 });
 
