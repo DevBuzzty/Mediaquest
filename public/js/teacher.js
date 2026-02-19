@@ -244,22 +244,36 @@ function addTeamCardToGame(team) {
     card.className = 'bg-slate-800/50 p-4 rounded-2xl border-l-4 border-slate-700 flex items-center justify-between transition-all';
     card.style.borderLeftColor = team.color;
 
-    card.innerHTML = `
-        <div class="flex items-center gap-4">
-            <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-black" style="background-color: ${team.color}">
-                ${team.name.charAt(0)}
-            </div>
-            <div>
-                <h4 class="font-bold text-sm">${team.name}</h4>
-                <div id="team-status-${team.id}" class="mt-1">
-                    <span class="text-[10px] text-slate-500 italic">Wartet auf Start...</span>
-                </div>
-            </div>
-        </div>
-        <div class="text-[9px] font-black text-slate-600 bg-slate-900 px-2 py-1 rounded">
-            SIZE: ${team.group_size}
-        </div>
-    `;
+    const leftDiv = document.createElement('div');
+    leftDiv.className = 'flex items-center gap-4';
+
+    const iconDiv = document.createElement('div');
+    iconDiv.className = 'w-10 h-10 rounded-full flex items-center justify-center text-white font-black';
+    iconDiv.style.backgroundColor = team.color;
+    iconDiv.textContent = team.name.charAt(0);
+
+    const infoDiv = document.createElement('div');
+    const h4 = document.createElement('h4');
+    h4.className = 'font-bold text-sm';
+    h4.textContent = team.name;
+
+    const statusDiv = document.createElement('div');
+    statusDiv.id = `team-status-${team.id}`;
+    statusDiv.className = 'mt-1';
+    statusDiv.innerHTML = '<span class="text-[10px] text-slate-500 italic">Wartet auf Start...</span>';
+
+    infoDiv.appendChild(h4);
+    infoDiv.appendChild(statusDiv);
+    leftDiv.appendChild(iconDiv);
+    leftDiv.appendChild(infoDiv);
+
+    const sizeDiv = document.createElement('div');
+    sizeDiv.className = 'text-[9px] font-black text-slate-600 bg-slate-900 px-2 py-1 rounded';
+    sizeDiv.textContent = `SIZE: ${team.group_size}`;
+
+    card.appendChild(leftDiv);
+    card.appendChild(sizeDiv);
+
     list.appendChild(card);
 }
 
@@ -269,16 +283,25 @@ function addSubmissionCard(sub) {
     card.className = 'bg-slate-700 p-3 rounded-lg border-l-4 shadow-lg flex flex-col gap-2';
     card.style.borderLeftColor = sub.team_color || '#3b82f6';
 
-    const header = `<p class="text-[10px] font-bold uppercase text-slate-400">${sub.team_name || 'Team'} - ${sub.type}</p>`;
-    let content = '';
+    const header = document.createElement('p');
+    header.className = 'text-[10px] font-bold uppercase text-slate-400';
+    header.textContent = `${sub.team_name || 'Team'} - ${sub.type}`;
+
+    card.appendChild(header);
 
     if (sub.type === 'photo') {
-        content = `<img src="${sub.content}" class="w-full h-32 object-cover rounded cursor-pointer" onclick="window.open('${sub.content}')">`;
+        const img = document.createElement('img');
+        img.src = sub.content;
+        img.className = 'w-full h-32 object-cover rounded cursor-pointer';
+        img.onclick = () => window.open(sub.content);
+        card.appendChild(img);
     } else {
-        content = `<p class="text-sm italic">"${sub.content}"</p>`;
+        const p = document.createElement('p');
+        p.className = 'text-sm italic text-slate-300';
+        p.textContent = `"${sub.content}"`;
+        card.appendChild(p);
     }
 
-    card.innerHTML = header + content;
     list.prepend(card);
 }
 
@@ -410,10 +433,24 @@ async function showSummaryView() {
         const item = document.createElement('div');
         item.className = 'p-3 bg-slate-700 rounded-lg border-l-4 shadow';
         item.style.borderLeftColor = sub.team_color;
-        item.innerHTML = `
-            <p class="text-[10px] font-bold text-slate-400 uppercase">${sub.team_name}</p>
-            ${sub.type === 'photo' ? `<img src="${sub.content}" class="w-full h-32 object-cover rounded mt-1">` : `<p class="text-sm italic mt-1">"${sub.content}"</p>`}
-        `;
+
+        const nameP = document.createElement('p');
+        nameP.className = 'text-[10px] font-bold text-slate-400 uppercase';
+        nameP.textContent = sub.team_name;
+        item.appendChild(nameP);
+
+        if (sub.type === 'photo') {
+            const img = document.createElement('img');
+            img.src = sub.content;
+            img.className = 'w-full h-32 object-cover rounded mt-1';
+            item.appendChild(img);
+        } else {
+            const p = document.createElement('p');
+            p.className = 'text-sm italic mt-1 text-slate-200';
+            p.textContent = `"${sub.content}"`;
+            item.appendChild(p);
+        }
+
         grid.appendChild(item);
     });
 

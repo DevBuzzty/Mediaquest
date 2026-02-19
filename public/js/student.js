@@ -210,6 +210,23 @@ function renderGame(mode, task, totalTasks) {
 
         const gameArea = document.createElement('div');
         gameArea.id = 'gameArea';
+
+        if (task.description) {
+            const desc = document.createElement('div');
+            desc.className = 'mb-6 p-4 bg-slate-800/80 rounded-2xl border border-slate-700 text-sm font-bold text-slate-300 leading-relaxed text-left';
+
+            const descHeader = document.createElement('div');
+            descHeader.className = 'flex items-center gap-2 mb-1';
+            descHeader.innerHTML = '<span class="text-blue-500">ℹ️</span><span class="text-[10px] uppercase font-black text-slate-500 tracking-widest">Anleitung</span>';
+
+            const descText = document.createElement('p');
+            descText.textContent = task.description;
+
+            desc.appendChild(descHeader);
+            desc.appendChild(descText);
+            container.appendChild(desc);
+        }
+
         container.appendChild(gameArea);
 
         if (mode === 'binary') {
@@ -904,6 +921,12 @@ socket.on('gameEnded', () => {
     });
 });
 
+socket.on('sessionClosed', () => {
+    WeltenretterUI.alert('Die Session wurde von der Lehrkraft geschlossen.', 'Session beendet', '🚪').then(() => {
+        window.location.href = '/';
+    });
+});
+
 // Auth & Join
 document.getElementById('sessionCodeInput')?.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') document.getElementById('joinBtn').click();
@@ -983,19 +1006,40 @@ async function renderSummary() {
     list.innerHTML = '';
 
     if (data.submissions.length === 0) {
-        list.innerHTML = '<p class="text-slate-500 italic">Noch keine Einsendungen vorhanden.</p>';
+        list.innerHTML = '<p class="text-slate-500 italic text-center">Noch keine Einsendungen vorhanden.</p>';
     } else {
         data.submissions.forEach(sub => {
             const card = document.createElement('div');
             card.className = 'bg-slate-800 p-5 rounded-[2rem] border-l-8 text-left shadow-2xl animate-bounce-in';
             card.style.borderLeftColor = sub.team_color;
-            card.innerHTML = `
-                <div class="flex justify-between items-center mb-3">
-                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">${sub.team_name}</p>
-                    <span class="text-[10px] bg-slate-900 px-2 py-0.5 rounded-full text-slate-500">${sub.type}</span>
-                </div>
-                ${sub.type === 'photo' ? `<img src="${sub.content}" class="w-full h-48 object-cover rounded-2xl">` : `<p class="text-lg font-bold text-slate-200 italic leading-snug">"${sub.content}"</p>`}
-            `;
+
+            const header = document.createElement('div');
+            header.className = 'flex justify-between items-center mb-3';
+
+            const nameP = document.createElement('p');
+            nameP.className = 'text-[10px] font-black text-slate-500 uppercase tracking-widest';
+            nameP.textContent = sub.team_name;
+
+            const typeSpan = document.createElement('span');
+            typeSpan.className = 'text-[10px] bg-slate-900 px-2 py-0.5 rounded-full text-slate-500';
+            typeSpan.textContent = sub.type;
+
+            header.appendChild(nameP);
+            header.appendChild(typeSpan);
+            card.appendChild(header);
+
+            if (sub.type === 'photo') {
+                const img = document.createElement('img');
+                img.src = sub.content;
+                img.className = 'w-full h-48 object-cover rounded-2xl';
+                card.appendChild(img);
+            } else {
+                const p = document.createElement('p');
+                p.className = 'text-lg font-bold text-slate-200 italic leading-snug';
+                p.textContent = `"${sub.content}"`;
+                card.appendChild(p);
+            }
+
             list.appendChild(card);
         });
     }

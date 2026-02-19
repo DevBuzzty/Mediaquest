@@ -71,15 +71,17 @@ async function ensureDefaultBlueprints(teacherId) {
             title: "Weltenretter Starter-Runde",
             game_type: "template",
             tasks: [
-                { type: "binary", question: "Wurde dieses Foto manipuliert?", icon: "🖼️" },
+                { type: "binary", question: "Wurde dieses Foto manipuliert?", icon: "🖼️", description: "Wische nach rechts für JA oder nach links für NEIN." },
                 {
                     type: "choice",
                     question: "Woran erkennst du eine seriöse Quelle?",
-                    options: ["A) Am Design", "B) Am Impressum", "C) An vielen Likes"]
+                    options: ["A) Am Design", "B) Am Impressum", "C) An vielen Likes"],
+                    description: "Wähle die richtige Antwort aus."
                 },
                 {
                     type: "chat",
                     partner: "ZockerPro",
+                    description: "Reagiere auf die Nachrichten des Chat-Partners.",
                     nodes: {
                         "start": { "text": "Gibst du mir dein Passwort für gratis Coins?", "options": [{ "label": "Klar!", "next": "bad" }, { "label": "Nein!", "next": "good" }] },
                         "bad": { "text": "Account gehackt!", "options": [] },
@@ -88,6 +90,7 @@ async function ensureDefaultBlueprints(teacherId) {
                 },
                 {
                     type: "scroller",
+                    description: "Tippe auf Beiträge, die problematisch sein könnten.",
                     posts: [
                         { user: "Bot1", text: "Klick hier für Geld!", isBad: true },
                         { user: "User1", text: "Hund ist weggelaufen.", isBad: false },
@@ -103,6 +106,7 @@ async function ensureDefaultBlueprints(teacherId) {
                 },
                 {
                     type: "bucket",
+                    description: "Ziehe die Begriffe in den richtigen Korb.",
                     buckets: ["Privat", "Öffentlich"],
                     items: [
                         { text: "Passwort", target: 0 },
@@ -115,9 +119,9 @@ async function ensureDefaultBlueprints(teacherId) {
             title: "Social Media Führerschein",
             game_type: "template",
             tasks: [
-                { type: "mood", question: "Wie fühlst du dich bei Hass-Kommentaren?", labelLeft: "Schlecht", labelRight: "Egal" },
-                { type: "profile", fields: ["name", "ort"], customFields: ["Hobby"] },
-                { type: "statement", question: "Was ist dein Tipp gegen Cybermobbing?" }
+                { type: "mood", question: "Wie fühlst du dich bei Hass-Kommentaren?", labelLeft: "Schlecht", labelRight: "Egal", description: "Bewege den Regler auf die passende Position." },
+                { type: "profile", fields: ["name", "ort"], customFields: ["Hobby"], description: "Fülle dein Profil aus, aber sei vorsichtig mit deinen Daten!" },
+                { type: "statement", question: "Was ist dein Tipp gegen Cybermobbing?", description: "Schreibe eine kurze Nachricht." }
             ]
         },
         {
@@ -125,9 +129,9 @@ async function ensureDefaultBlueprints(teacherId) {
             game_type: "template",
             templateType: "qr",
             tasks: [
-                { type: "password", question: "Station 1: Passwort-Tresor", code: "123456" },
-                { type: "hotspot", question: "Station 2: Phishing-Falle", code: "654321", image: "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=800", zones: [{x: 10, y: 10, w: 20, h: 20}] },
-                { type: "photo", question: "Station 3: Beweisfoto", code: "998877" }
+                { type: "password", question: "Station 1: Passwort-Tresor", code: "123456", description: "Finde das richtige Passwort heraus." },
+                { type: "hotspot", question: "Station 2: Phishing-Falle", code: "654321", description: "Tippe auf alle Stellen im Bild, die dir verdächtig vorkommen.", image: "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=800", zones: [{x: 10, y: 10, w: 20, h: 20}] },
+                { type: "photo", question: "Station 3: Beweisfoto", code: "998877", description: "Mache ein Foto von deinem Team am Stationen-Tisch." }
             ]
         }
     ];
@@ -378,8 +382,13 @@ app.get('/api/sessions/active', isAuthenticated, async (req, res) => {
 
 app.post('/api/sessions/close', isAuthenticated, async (req, res) => {
     try {
-        const closedAt = new Date().toISOString();
-        await dbAsync.run('UPDATE sessions SET status = "closed", closed_at = ? WHERE teacher_id = ? AND status = "active"', [closedAt, req.session.teacherId]);
+        const session = await dbAsync.get('SELECT id FROM sessions WHERE teacher_id = ? AND status = "active"', [req.session.teacherId]);
+        if (session) {
+            const closedAt = new Date().toISOString();
+            await dbAsync.run('UPDATE sessions SET status = "closed", closed_at = ? WHERE id = ?', [closedAt, session.id]);
+            // Notify all students that the session is closed
+            io.to(`session_${session.id}`).emit('sessionClosed');
+        }
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: 'Fehler beim Schließen der Session' });

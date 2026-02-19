@@ -165,6 +165,9 @@ function renderTaskFields(idx) {
         addField(container, 'Frage / Anweisung', 'text', 'question', idx, task.question || '');
     }
 
+    // New Description Field for all tasks
+    addField(container, 'Kurze Beschreibung / Anleitung', 'text', 'description', idx, task.description || '');
+
     if (type === 'binary') {
         addField(container, 'Emoji / Icon', 'text', 'icon', idx, task.icon || '❓');
     } else if (type === 'choice' || type === 'select') {
