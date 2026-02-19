@@ -6,6 +6,7 @@ const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
+const multer = require('multer');
 const { dbAsync, db } = require('./db');
 const { containsBadWords } = require('./filter');
 const path = require('path');
@@ -27,20 +28,29 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// Ensure test account exists
-async function ensureTestAccount() {
+// Ensure default accounts exist
+async function ensureDefaultAccounts() {
     try {
+        // Test account
         const testUser = await dbAsync.get('SELECT * FROM teachers WHERE username = ?', ['test']);
         if (!testUser) {
             const hashedPass = await bcrypt.hash('test', 10);
             await dbAsync.run('INSERT INTO teachers (username, password) VALUES (?, ?)', ['test', hashedPass]);
             console.log('Test account (test:test) created.');
         }
+
+        // Admin account
+        const adminUser = await dbAsync.get('SELECT * FROM teachers WHERE username = ?', ['admin']);
+        if (!adminUser) {
+            const hashedPass = await bcrypt.hash('admin', 10);
+            await dbAsync.run('INSERT INTO teachers (username, password) VALUES (?, ?)', ['admin', hashedPass]);
+            console.log('Admin account (admin:admin) created.');
+        }
     } catch (err) {
-        console.error('Error creating test account:', err);
+        console.error('Error creating default accounts:', err);
     }
 }
-ensureTestAccount();
+ensureDefaultAccounts();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -53,6 +63,18 @@ app.use(session({
 }));
 
 app.use(express.static('public'));
+
+// Multer Storage Configuration
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'public/uploads/');
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
+});
+const upload = multer({ storage: storage });
 
 function isAuthenticated(req, res, next) {
     if (req.session.teacherId) return next();
@@ -120,6 +142,24 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
+app.get('/api/sessions/:id/submissions', isAuthenticated, async (req, res) => {
+    const sessionId = req.params.id;
+    try {
+        const session = await dbAsync.get('SELECT id FROM sessions WHERE id = ? AND teacher_id = ?', [sessionId, req.session.teacherId]);
+        if (!session) return res.status(403).json({ error: 'Zugriff verweigert' });
+        const submissions = await dbAsync.all(`
+            SELECT s.*, t.name as team_name, t.color as team_color
+            FROM submissions s
+            JOIN teams t ON s.team_id = t.id
+            WHERE s.session_id = ?
+            ORDER BY s.created_at DESC
+        `, [sessionId]);
+        res.json({ submissions });
+    } catch (err) {
+        res.status(500).json({ error: 'Datenbankfehler' });
+    }
+});
+
 app.post('/api/logout', (req, res) => {
     req.session.destroy();
     res.json({ success: true });
@@ -131,6 +171,13 @@ app.get('/api/me', (req, res) => {
     } else {
         res.json({ loggedIn: false });
     }
+});
+
+// File Upload Route
+app.post('/api/upload', upload.single('image'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'Keine Datei hochgeladen' });
+    const url = `/uploads/${req.file.filename}`;
+    res.json({ success: true, url: url });
 });
 
 // Blueprint Routes
@@ -460,6 +507,24 @@ app.post('/api/sessions/active/end', isAuthenticated, async (req, res) => {
 io.on('connection', (socket) => {
     socket.on('joinSessionRoom', (sessionId) => {
         socket.join(`session_${sessionId}`);
+    });
+
+    socket.on('studentSubmission', async (data) => {
+        try {
+            const { sessionId, teamId, type, content } = data;
+            await dbAsync.run(
+                'INSERT INTO submissions (session_id, team_id, type, content, created_at) VALUES (?, ?, ?, ?, ?)',
+                [sessionId, teamId, type, content, new Date().toISOString()]
+            );
+            // Notify teacher
+            io.to(`session_${sessionId}`).emit('newSubmission', data);
+        } catch (err) {
+            console.error('Submission error:', err);
+        }
+    });
+
+    socket.on('showResults', (data) => {
+        io.to(`session_${data.sessionId}`).emit('displayResults');
     });
 });
 

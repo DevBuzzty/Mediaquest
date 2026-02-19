@@ -12,7 +12,6 @@
         <h1 class="text-2xl font-bold text-blue-500">Weltenretter Lehrer-Dashboard</h1>
         <div class="flex items-center gap-4">
             <span id="teacherUsername" class="text-slate-300"></span>
-            <a href="/blueprints.html" class="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-sm font-bold transition-colors">Blueprint Creator</a>
             <a href="/" class="text-slate-400 hover:text-white text-sm">Zur Startseite</a>
             <button id="logoutBtn" class="bg-slate-700 hover:bg-red-600 px-3 py-1 rounded text-sm transition-colors">Abmelden</button>
         </div>
@@ -62,16 +61,31 @@
                             <div id="devBlueprintList" class="flex flex-wrap justify-center gap-2">
                                 <!-- Blueprints as small buttons -->
                             </div>
-                            <div class="flex gap-2 border-t border-slate-600 pt-2 w-full justify-center">
-                                <button onclick="changeGameMode('binary')" class="bg-slate-600 hover:bg-blue-600 px-3 py-1 rounded text-xs transition-colors">Reset Swipe</button>
-                                <button onclick="changeGameMode('choice')" class="bg-slate-600 hover:bg-blue-600 px-3 py-1 rounded text-xs transition-colors">Reset Choice</button>
-                                <button onclick="changeGameMode('select')" class="bg-slate-600 hover:bg-blue-600 px-3 py-1 rounded text-xs transition-colors">Reset Select</button>
+                            <div class="flex flex-wrap gap-1 border-t border-slate-600 pt-2 w-full justify-center">
+                                <button onclick="changeGameMode('binary')" class="bg-slate-600 hover:bg-blue-600 px-2 py-0.5 rounded text-[10px] transition-colors">Swipe</button>
+                                <button onclick="changeGameMode('choice')" class="bg-slate-600 hover:bg-blue-600 px-2 py-0.5 rounded text-[10px] transition-colors">Choice</button>
+                                <button onclick="changeGameMode('select')" class="bg-slate-600 hover:bg-blue-600 px-2 py-0.5 rounded text-[10px] transition-colors">Select</button>
+                                <button onclick="changeGameMode('chat')" class="bg-slate-600 hover:bg-blue-600 px-2 py-0.5 rounded text-[10px] transition-colors">Chat</button>
+                                <button onclick="changeGameMode('scroller')" class="bg-slate-600 hover:bg-blue-600 px-2 py-0.5 rounded text-[10px] transition-colors">Scroller</button>
+                                <button onclick="changeGameMode('hotspot')" class="bg-slate-600 hover:bg-blue-600 px-2 py-0.5 rounded text-[10px] transition-colors">Hotspot</button>
+                                <button onclick="changeGameMode('mood')" class="bg-slate-600 hover:bg-blue-600 px-2 py-0.5 rounded text-[10px] transition-colors">Mood</button>
+                                <button onclick="changeGameMode('countdown')" class="bg-slate-600 hover:bg-blue-600 px-2 py-0.5 rounded text-[10px] transition-colors">Timer</button>
                             </div>
                         </div>
                         <br>
                         <button id="endGameBtn" class="bg-red-600 hover:bg-red-700 px-8 py-3 rounded-xl font-bold transition-all">
                             Spiel beenden
                         </button>
+                        <button id="showResultsBtn" class="bg-indigo-600 hover:bg-indigo-700 px-8 py-3 rounded-xl font-bold transition-all">
+                            Ergebnisse für alle zeigen
+                        </button>
+                    </div>
+
+                    <div id="submissionsContainer" class="mt-12 text-left space-y-4">
+                        <h3 class="text-xl font-bold border-b border-slate-700 pb-2">Studenten-Einsendungen</h3>
+                        <div id="submissionsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <!-- Injected by JS -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -88,9 +102,31 @@
                         <div class="flex items-center gap-2">
                             <label for="gameType" class="text-slate-400">Spielmodus:</label>
                             <select id="gameType" onchange="toggleBlueprintSelect(this.value)" class="bg-slate-700 border border-slate-600 rounded px-3 py-1">
-                                <option value="binary">Binary Swipe</option>
-                                <option value="choice">Multiple Choice</option>
-                                <option value="select">Multiple Select</option>
+                                <optgroup label="Basis">
+                                    <option value="binary">Binary Swipe</option>
+                                    <option value="choice">Multiple Choice</option>
+                                    <option value="select">Multiple Select</option>
+                                </optgroup>
+                                <optgroup label="Interaktion">
+                                    <option value="chat">Chat-Simulator</option>
+                                    <option value="scroller">Feed-Scroller</option>
+                                    <option value="detector">Detektor (Lupe)</option>
+                                    <option value="hotspot">Hotspot-Bild</option>
+                                </optgroup>
+                                <optgroup label="Eingabe">
+                                    <option value="password">Passwort-Generator</option>
+                                    <option value="photo">Foto-Upload</option>
+                                    <option value="statement">Text-Statement</option>
+                                    <option value="profile">Profil-Editor</option>
+                                </optgroup>
+                                <optgroup label="Mechanik">
+                                    <option value="mood">Stimmungs-Barometer</option>
+                                    <option value="bucket">Bucket Drop</option>
+                                    <option value="ranking">Ranking</option>
+                                    <option value="pairs">Paare finden</option>
+                                    <option value="cloze">Lückentext</option>
+                                    <option value="countdown">Countdown</option>
+                                </optgroup>
                             </select>
                         </div>
                         <div id="blueprintSelectContainer" class="hidden flex items-center gap-2">

@@ -29,9 +29,31 @@
                     <div>
                         <label class="block text-sm font-medium text-slate-400 mb-1">Spiel-Typ</label>
                         <select id="gameType" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4 focus:ring-2 focus:ring-blue-500 outline-none">
-                            <option value="binary">Binary Swipe (Ja/Nein)</option>
-                            <option value="choice">Multiple Choice (1 Antwort)</option>
-                            <option value="select">Multiple Select (Mehrere Antworten)</option>
+                            <optgroup label="Basis">
+                                <option value="binary">Binary Swipe (Ja/Nein)</option>
+                                <option value="choice">Multiple Choice (1 Antwort)</option>
+                                <option value="select">Multiple Select (Mehrere Antworten)</option>
+                            </optgroup>
+                            <optgroup label="Interaktion">
+                                <option value="chat">Chat-Simulator (Verzweigt)</option>
+                                <option value="scroller">Feed-Scroller (Social Media)</option>
+                                <option value="detector">Detektor (Lupe)</option>
+                                <option value="hotspot">Hotspot-Bild (Klicken)</option>
+                            </optgroup>
+                            <optgroup label="Eingabe & Check">
+                                <option value="password">Passwort-Generator</option>
+                                <option value="photo">Foto-Upload / Kamera</option>
+                                <option value="statement">Text-Statement</option>
+                                <option value="profile">Profil-Editor</option>
+                            </optgroup>
+                            <optgroup label="Mechanik">
+                                <option value="mood">Stimmungs-Barometer</option>
+                                <option value="bucket">Bucket Drop (Kategorien)</option>
+                                <option value="ranking">Ranking (Sortieren)</option>
+                                <option value="pairs">Paare finden</option>
+                                <option value="cloze">Lückentext (Drag & Drop)</option>
+                                <option value="countdown">Countdown / Timer</option>
+                            </optgroup>
                         </select>
                     </div>
 

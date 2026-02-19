@@ -64,6 +64,7 @@ async function loadActiveSession() {
             document.getElementById('lobbyView').classList.add('hidden');
             document.getElementById('gameView').classList.remove('hidden');
             document.getElementById('activeGameModeDisplay').textContent = data.session.game_type;
+            loadSubmissions(data.session.id);
         } else {
             document.getElementById('lobbyView').classList.remove('hidden');
             document.getElementById('gameView').classList.add('hidden');
@@ -132,6 +133,37 @@ socket.on('teamDeleted', (id) => {
     const card = document.getElementById(`team-card-${id}`);
     if (card) card.remove();
 });
+
+socket.on('newSubmission', (data) => {
+    addSubmissionCard(data);
+});
+
+async function loadSubmissions(sessionId) {
+    const res = await fetch(`/api/sessions/${sessionId}/submissions`);
+    const data = await res.json();
+    const list = document.getElementById('submissionsList');
+    list.innerHTML = '';
+    data.submissions.forEach(addSubmissionCard);
+}
+
+function addSubmissionCard(sub) {
+    const list = document.getElementById('submissionsList');
+    const card = document.createElement('div');
+    card.className = 'bg-slate-700 p-3 rounded-lg border-l-4 shadow-lg flex flex-col gap-2';
+    card.style.borderLeftColor = sub.team_color || '#3b82f6';
+
+    const header = `<p class="text-[10px] font-bold uppercase text-slate-400">${sub.team_name || 'Team'} - ${sub.type}</p>`;
+    let content = '';
+
+    if (sub.type === 'photo') {
+        content = `<img src="${sub.content}" class="w-full h-32 object-cover rounded cursor-pointer" onclick="window.open('${sub.content}')">`;
+    } else {
+        content = `<p class="text-sm italic">"${sub.content}"</p>`;
+    }
+
+    card.innerHTML = header + content;
+    list.prepend(card);
+}
 
 async function loadHistory() {
     const res = await fetch('/api/sessions/history');
@@ -239,6 +271,34 @@ document.getElementById('endGameBtn').addEventListener('click', async () => {
         document.getElementById('gameView').classList.add('hidden');
     } else alert('Fehler beim Beenden');
 });
+
+document.getElementById('showResultsBtn').addEventListener('click', () => {
+    socket.emit('showResults', { sessionId: currentSessionId });
+    showSummaryView();
+});
+
+async function showSummaryView() {
+    const res = await fetch(`/api/sessions/${currentSessionId}/submissions`);
+    const data = await res.json();
+
+    document.getElementById('modalTitle').textContent = "Abschluss-Ergebnisse (Alle Teams)";
+    const content = document.getElementById('modalContent');
+    content.innerHTML = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>';
+    const grid = content.querySelector('div');
+
+    data.submissions.forEach(sub => {
+        const item = document.createElement('div');
+        item.className = 'p-3 bg-slate-700 rounded-lg border-l-4 shadow';
+        item.style.borderLeftColor = sub.team_color;
+        item.innerHTML = `
+            <p class="text-[10px] font-bold text-slate-400 uppercase">${sub.team_name}</p>
+            ${sub.type === 'photo' ? `<img src="${sub.content}" class="w-full h-32 object-cover rounded mt-1">` : `<p class="text-sm italic mt-1">"${sub.content}"</p>`}
+        `;
+        grid.appendChild(item);
+    });
+
+    document.getElementById('detailsModal').classList.remove('hidden');
+}
 
 document.getElementById('closeSessionBtn').addEventListener('click', async () => {
     if (!confirm('Session wirklich schließen?')) return;

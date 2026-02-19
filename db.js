@@ -47,6 +47,17 @@ db.serialize(() => {
         FOREIGN KEY (teacher_id) REFERENCES teachers(id)
     )`);
 
+    db.run(`CREATE TABLE IF NOT EXISTS submissions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id INTEGER NOT NULL,
+        team_id INTEGER NOT NULL,
+        type TEXT NOT NULL,
+        content TEXT NOT NULL,
+        created_at DATETIME,
+        FOREIGN KEY (session_id) REFERENCES sessions(id),
+        FOREIGN KEY (team_id) REFERENCES teams(id)
+    )`);
+
     // Indexes for performance
     db.run(`CREATE INDEX IF NOT EXISTS idx_sessions_code ON sessions(code)`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_teams_code ON teams(team_code)`);
