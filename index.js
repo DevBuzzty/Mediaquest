@@ -119,13 +119,23 @@ async function ensureDefaultBlueprints(teacherId) {
                 { type: "profile", fields: ["name", "ort"], customFields: ["Hobby"] },
                 { type: "statement", question: "Was ist dein Tipp gegen Cybermobbing?" }
             ]
+        },
+        {
+            title: "QR-Stationenlernen: Sicherheit",
+            game_type: "template",
+            templateType: "qr",
+            tasks: [
+                { type: "password", question: "Station 1: Passwort-Tresor", code: "123456" },
+                { type: "hotspot", question: "Station 2: Phishing-Falle", code: "654321", image: "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=800", zones: [{x: 10, y: 10, w: 20, h: 20}] },
+                { type: "photo", question: "Station 3: Beweisfoto", code: "998877" }
+            ]
         }
     ];
 
     for (const ex of examples) {
         await dbAsync.run(
             'INSERT INTO blueprints (teacher_id, title, game_type, content, created_at) VALUES (?, ?, ?, ?, ?)',
-            [teacherId, ex.title, ex.game_type, JSON.stringify({ tasks: ex.tasks }), new Date().toISOString()]
+            [teacherId, ex.title, ex.game_type, JSON.stringify({ tasks: ex.tasks, templateType: ex.templateType || 'normal' }), new Date().toISOString()]
         );
     }
     console.log(`Examples seeded for teacher ${teacherId}`);
@@ -146,9 +156,15 @@ app.use(session({
 app.use(express.static('public'));
 
 // Multer Storage Configuration
+const fs = require('fs');
+const uploadDir = 'public/uploads/';
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'public/uploads/');
+        cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -159,6 +175,11 @@ const upload = multer({ storage: storage });
 
 function isAuthenticated(req, res, next) {
     if (req.session.teacherId) return next();
+    res.status(401).json({ error: 'Nicht autorisiert' });
+}
+
+function canUpload(req, res, next) {
+    if (req.session.teacherId || req.session.teamId) return next();
     res.status(401).json({ error: 'Nicht autorisiert' });
 }
 
@@ -268,7 +289,7 @@ app.get('/api/me', (req, res) => {
 });
 
 // File Upload Route
-app.post('/api/upload', upload.single('image'), (req, res) => {
+app.post('/api/upload', canUpload, upload.single('image'), (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'Keine Datei hochgeladen' });
     const url = `/uploads/${req.file.filename}`;
     res.json({ success: true, url: url });
@@ -331,12 +352,26 @@ app.post('/api/sessions', isAuthenticated, async (req, res) => {
 
 app.get('/api/sessions/active', isAuthenticated, async (req, res) => {
     try {
-        const session = await dbAsync.get('SELECT * FROM sessions WHERE teacher_id = ? AND status = "active"', [req.session.teacherId]);
+        const session = await dbAsync.get(`
+            SELECT s.*, b.content as blueprint_content, b.title as blueprint_title
+            FROM sessions s
+            LEFT JOIN blueprints b ON s.blueprint_id = b.id
+            WHERE s.teacher_id = ? AND s.status = "active"
+        `, [req.session.teacherId]);
+
         if (!session) return res.json({ active: false });
+
+        if (session.blueprint_content) {
+            session.blueprint = {
+                title: session.blueprint_title,
+                content: JSON.parse(session.blueprint_content)
+            };
+        }
 
         const teams = await dbAsync.all('SELECT * FROM teams WHERE session_id = ?', [session.id]);
         res.json({ active: true, session: session, teams: teams });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ error: 'Datenbankfehler' });
     }
 });
@@ -407,6 +442,9 @@ app.post('/api/rejoin', async (req, res) => {
             if (bp) blueprint = JSON.parse(bp.content);
         }
 
+        req.session.teamId = team.id;
+        req.session.activeSessionId = team.session_id;
+
         res.json({
             success: true,
             sessionId: team.session_id,
@@ -428,7 +466,9 @@ app.post('/api/join', async (req, res) => {
     const { code } = req.body;
     try {
         const session = await dbAsync.get('SELECT * FROM sessions WHERE code = ? AND status = "active"', [code.toUpperCase()]);
-        if (!session) return res.status(404).json({ error: 'Session nicht gefunden oder abgelaufen' });
+        if (!session) {
+            return res.status(404).json({ error: 'Session nicht gefunden oder abgelaufen' });
+        }
 
         const teams = await dbAsync.all('SELECT color FROM teams WHERE session_id = ?', [session.id]);
         const takenColors = teams.map(t => t.color);
@@ -438,6 +478,8 @@ app.post('/api/join', async (req, res) => {
             const bp = await dbAsync.get('SELECT content FROM blueprints WHERE id = ?', [session.blueprint_id]);
             if (bp) blueprint = JSON.parse(bp.content);
         }
+
+        req.session.activeSessionId = session.id;
 
         res.json({
             success: true,
@@ -490,6 +532,7 @@ app.post('/api/teams', async (req, res) => {
         io.to(`session_${sessionId}`).emit('teamCreated', { id: result.lastID, name, color, group_size: groupSize, created_at: createdAt });
         io.to(`session_${sessionId}`).emit('colorPicked', color);
 
+        req.session.teamId = result.lastID;
         res.json({ success: true, teamId: result.lastID, teamCode: teamCode });
     } catch (err) {
         console.error(err);

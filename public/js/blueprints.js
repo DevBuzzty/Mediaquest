@@ -21,6 +21,7 @@ const categories = [
 let tasks = [];
 let blueprints = [];
 let editingBlueprintId = null;
+let currentTemplateType = 'normal';
 
 async function checkAuth() {
     const res = await fetch('/api/me');
@@ -33,10 +34,27 @@ async function checkAuth() {
 function createNewTemplate() {
     editingBlueprintId = null;
     tasks = [];
+    setTemplateType('normal');
     document.getElementById('blueprintTitle').value = '';
     document.getElementById('editorPlaceholder').classList.add('hidden');
     document.getElementById('editorContainer').classList.remove('hidden');
     addTask();
+}
+
+function setTemplateType(type) {
+    currentTemplateType = type;
+    const btnNormal = document.getElementById('type-normal');
+    const btnQr = document.getElementById('type-qr');
+
+    if (type === 'normal') {
+        btnNormal.className = 'flex-1 rounded-xl font-bold text-sm transition-all bg-blue-600 text-white';
+        btnQr.className = 'flex-1 rounded-xl font-bold text-sm transition-all text-slate-500 hover:text-slate-300';
+    } else {
+        btnQr.className = 'flex-1 rounded-xl font-bold text-sm transition-all bg-blue-600 text-white';
+        btnNormal.className = 'flex-1 rounded-xl font-bold text-sm transition-all text-slate-500 hover:text-slate-300';
+    }
+
+    renderTasks();
 }
 
 function cancelEditor() {
@@ -44,10 +62,15 @@ function cancelEditor() {
     document.getElementById('editorPlaceholder').classList.remove('hidden');
 }
 
+function generateTaskCode() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
 function addTask() {
     const task = {
         id: Date.now() + Math.random(),
-        type: 'choice' // Default type
+        type: 'choice', // Default type
+        code: generateTaskCode()
     };
     tasks.push(task);
     renderTasks();
@@ -87,6 +110,17 @@ function renderTasks() {
                         ${typeOptions}
                     </select>
                 </div>
+
+                ${currentTemplateType === 'qr' ? `
+                    <div class="flex items-center gap-4">
+                        <div class="bg-slate-800 px-4 py-2 rounded-xl border border-slate-700">
+                            <span class="text-[10px] uppercase font-black text-slate-500 block">Task-Code</span>
+                            <span class="text-lg font-black text-blue-400 tracking-widest">${task.code}</span>
+                        </div>
+                        <div id="qr-${index}" class="bg-white p-1 rounded-lg"></div>
+                    </div>
+                ` : ''}
+
                 <button onclick="removeTask(${index})" class="w-10 h-10 rounded-xl bg-slate-800 text-slate-500 hover:text-red-500 hover:bg-red-500/10 transition-all flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
@@ -96,6 +130,20 @@ function renderTasks() {
             <div id="fields-${index}" class="space-y-6"></div>
         `;
         list.appendChild(div);
+
+        if (currentTemplateType === 'qr') {
+            setTimeout(() => {
+                new QRCode(document.getElementById(`qr-${index}`), {
+                    text: task.code,
+                    width: 48,
+                    height: 48,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+            }, 0);
+        }
+
         renderTaskFields(index);
     });
 }
@@ -618,7 +666,10 @@ async function saveBlueprint() {
         body: JSON.stringify({
             title,
             gameType: 'template',
-            content: { tasks: tasks }
+            content: {
+                tasks: tasks,
+                templateType: currentTemplateType
+            }
         })
     });
 
@@ -651,6 +702,7 @@ async function loadBlueprints() {
                 <p class="font-black text-sm text-slate-100 uppercase tracking-tighter">${bp.title}</p>
                 <div class="flex gap-2 mt-2">
                     <span class="text-[9px] bg-blue-600/20 text-blue-400 px-2 py-0.5 rounded font-black uppercase">${bp.content.tasks.length} GAMES</span>
+                    <span class="text-[9px] ${bp.content.templateType === 'qr' ? 'bg-purple-600/20 text-purple-400' : 'bg-green-600/20 text-green-400'} px-2 py-0.5 rounded font-black uppercase">${bp.content.templateType === 'qr' ? 'QR-MODE' : 'NORMAL'}</span>
                     <span class="text-[9px] bg-slate-800 text-slate-500 px-2 py-0.5 rounded font-black uppercase">ID: ${bp.id}</span>
                 </div>
             </div>
@@ -667,6 +719,7 @@ async function loadBlueprints() {
 function editBlueprint(bp) {
     editingBlueprintId = bp.id;
     tasks = bp.content.tasks;
+    setTemplateType(bp.content.templateType || 'normal');
     document.getElementById('blueprintTitle').value = bp.title;
     document.getElementById('editorPlaceholder').classList.add('hidden');
     document.getElementById('editorContainer').classList.remove('hidden');

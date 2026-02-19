@@ -1,6 +1,7 @@
 const socket = io();
 
 let myBlueprints = [];
+let currentSessionId = null;
 
 async function checkAuth() {
     const res = await fetch('/api/me');
@@ -66,6 +67,7 @@ async function loadActiveSession() {
     const res = await fetch('/api/sessions/active');
     const data = await res.json();
     if (data.active) {
+        currentSessionId = data.session.id;
         document.getElementById('activeSessionContainer').classList.remove('hidden');
         document.getElementById('noActiveSessionContainer').classList.add('hidden');
         document.getElementById('sessionCodeDisplay').textContent = data.session.code;
@@ -74,7 +76,20 @@ async function loadActiveSession() {
         if (data.session.game_status === 'running') {
             document.getElementById('lobbyView').classList.add('hidden');
             document.getElementById('gameView').classList.remove('hidden');
-            document.getElementById('activeGameModeDisplay').textContent = data.session.game_type;
+
+            const bp = data.session.blueprint;
+            if (bp?.content?.templateType === 'qr') {
+                document.getElementById('activeGameModeDisplay').innerHTML = `
+                    <div class="flex flex-col items-center gap-2">
+                        <span>QR-MODE: ${bp.title}</span>
+                        <button onclick="showSessionQrCodes()" class="bg-blue-600 hover:bg-blue-500 text-[10px] px-3 py-1 rounded-full text-white font-black uppercase tracking-widest transition-all">QR-Codes anzeigen</button>
+                    </div>
+                `;
+                window.currentActiveBlueprint = bp;
+            } else {
+                document.getElementById('activeGameModeDisplay').textContent = data.session.game_type;
+            }
+
             loadSubmissions(data.session.id);
         } else {
             document.getElementById('lobbyView').classList.remove('hidden');
@@ -320,6 +335,43 @@ document.getElementById('closeSessionBtn').addEventListener('click', async () =>
     loadActiveSession();
     loadHistory();
 });
+
+function showSessionQrCodes() {
+    const bp = window.currentActiveBlueprint;
+    if (!bp) return;
+
+    document.getElementById('modalTitle').textContent = `QR-Codes: ${bp.title}`;
+    const content = document.getElementById('modalContent');
+    content.innerHTML = `
+        <p class="text-sm text-slate-400 mb-6 text-center">Drucke diese QR-Codes aus oder zeige sie an den Stationen.</p>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-6 max-h-[500px] overflow-y-auto p-4">
+            ${bp.content.tasks.map((task, i) => `
+                <div class="bg-slate-900 p-4 rounded-2xl flex flex-col items-center gap-3 border border-slate-700">
+                    <span class="text-[10px] font-black text-slate-500 uppercase">Station ${i+1}</span>
+                    <div id="modal-qr-${i}" class="bg-white p-2 rounded-lg"></div>
+                    <span class="text-xl font-black text-blue-500 tracking-widest">${task.code}</span>
+                    <span class="text-[9px] text-slate-600 uppercase font-bold text-center">${task.type}</span>
+                </div>
+            `).join('')}
+        </div>
+        <div class="mt-6 flex justify-center">
+            <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-600 px-6 py-2 rounded-xl text-xs font-bold transition-all">Druck-Ansicht öffnen</button>
+        </div>
+    `;
+
+    document.getElementById('detailsModal').classList.remove('hidden');
+
+    // Render QRs
+    bp.content.tasks.forEach((task, i) => {
+        setTimeout(() => {
+            new QRCode(document.getElementById(`modal-qr-${i}`), {
+                text: task.code,
+                width: 100,
+                height: 100
+            });
+        }, 10);
+    });
+}
 
 async function changeGameMode(mode) {
     const res = await fetch('/api/sessions/active/mode', {

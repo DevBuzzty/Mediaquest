@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blueprint Creator - Weltenretter</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
 <body class="bg-slate-900 text-white min-h-screen">
     <nav class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex justify-between items-center">
@@ -57,9 +58,18 @@
                         </div>
                     </div>
 
-                    <div class="space-y-4 mb-8">
-                        <label class="block text-xs font-bold uppercase text-slate-500 tracking-widest ml-1">Name der Spielrunde</label>
-                        <input type="text" id="blueprintTitle" placeholder="z.B. Stationenlernen: Social Media" class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 px-6 focus:ring-4 focus:ring-blue-500/20 outline-none text-xl font-bold">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div class="space-y-4">
+                            <label class="block text-xs font-bold uppercase text-slate-500 tracking-widest ml-1">Name der Spielrunde</label>
+                            <input type="text" id="blueprintTitle" placeholder="z.B. Stationenlernen: Social Media" class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 px-6 focus:ring-4 focus:ring-blue-500/20 outline-none text-xl font-bold">
+                        </div>
+                        <div class="space-y-4">
+                            <label class="block text-xs font-bold uppercase text-slate-500 tracking-widest ml-1">Ablauf-Typ</label>
+                            <div class="flex gap-2 p-1 bg-slate-900 rounded-2xl border border-slate-700 h-[68px]">
+                                <button id="type-normal" onclick="setTemplateType('normal')" class="flex-1 rounded-xl font-bold text-sm transition-all bg-blue-600 text-white">SEQUENTIELL</button>
+                                <button id="type-qr" onclick="setTemplateType('qr')" class="flex-1 rounded-xl font-bold text-sm transition-all text-slate-500 hover:text-slate-300">QR-CODES</button>
+                            </div>
+                        </div>
                     </div>
 
                     <div id="tasksList" class="space-y-12">

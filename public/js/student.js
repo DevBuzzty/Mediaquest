@@ -10,6 +10,7 @@ let currentGameType = 'binary';
 let currentBlueprint = null;
 let currentTaskIndex = 0;
 let takenColors = [];
+let html5QrScanner = null;
 
 const socket = io();
 
@@ -76,7 +77,66 @@ function initGameSequence(blueprint, mode) {
     currentBlueprint = blueprint;
     currentGameType = mode;
     currentTaskIndex = 0;
-    renderNextTask();
+
+    if (currentBlueprint?.templateType === 'qr') {
+        startQrPhase();
+    } else {
+        renderNextTask();
+    }
+}
+
+function startQrPhase() {
+    document.getElementById('gamePhase').classList.add('hidden');
+    document.getElementById('qrPhase').classList.remove('hidden');
+    document.getElementById('waitingPhase').classList.add('hidden');
+    startQrScanner();
+}
+
+function startQrScanner() {
+    if (html5QrScanner) return;
+    html5QrScanner = new Html5Qrcode("qr-reader");
+    html5QrScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        onScanSuccess
+    ).catch(err => {
+        console.warn("Scanner failed - probably no camera or permission", err);
+    });
+}
+
+async function stopQrScanner() {
+    if (html5QrScanner) {
+        try {
+            await html5QrScanner.stop();
+        } catch (e) {
+            console.warn("Scanner stop failed (maybe never started):", e);
+        }
+        html5QrScanner = null;
+        const readerEl = document.getElementById('qr-reader');
+        if (readerEl) readerEl.innerHTML = '';
+    }
+}
+
+function onScanSuccess(decodedText) {
+    handleTaskCode(decodedText);
+}
+
+window.handleManualCode = () => {
+    const code = document.getElementById('manualCodeInput').value.trim();
+    handleTaskCode(code);
+};
+
+async function handleTaskCode(code) {
+    const task = currentBlueprint.tasks.find(t => t.code === code);
+    if (task) {
+        await stopQrScanner();
+        document.getElementById('qrPhase').classList.add('hidden');
+        document.getElementById('gamePhase').classList.remove('hidden');
+        document.getElementById('manualCodeInput').value = '';
+        renderGame(task.type, task, 0); // 0 totalTasks means no progress bar
+    } else {
+        WeltenretterUI.alert('Ungültiger Code für diese Spielrunde.', 'Ups!', '❓');
+    }
 }
 
 async function renderNextTask() {
@@ -94,9 +154,14 @@ async function renderNextTask() {
     renderGame(mode, task, tasks.length);
 }
 
-function completeTask() {
-    currentTaskIndex++;
-    renderNextTask();
+async function completeTask() {
+    if (currentBlueprint?.templateType === 'qr') {
+        await WeltenretterUI.alert('Station erfolgreich abgeschlossen!', 'Sehr gut!', '✅');
+        startQrPhase();
+    } else {
+        currentTaskIndex++;
+        renderNextTask();
+    }
 }
 
 // Mini-Games Rendering
@@ -121,6 +186,16 @@ function renderGame(mode, task, totalTasks) {
                 </div>
             `;
             container.appendChild(progress);
+        } else if (currentBlueprint?.templateType === 'qr') {
+            const qrHeader = document.createElement('div');
+            qrHeader.className = 'mb-6 flex justify-between items-center';
+            qrHeader.innerHTML = `
+                <div class="bg-blue-600/20 text-blue-400 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-500/30">
+                    Station: ${task.code}
+                </div>
+                <button onclick="completeTask()" class="text-[10px] font-black text-slate-500 uppercase hover:text-white transition-colors">Abbrechen</button>
+            `;
+            container.appendChild(qrHeader);
         }
 
         const gameArea = document.createElement('div');
@@ -187,6 +262,57 @@ function renderBinary(task, container) {
         </div>
     `;
     initSwipe();
+}
+
+function initSwipe() {
+    const card = document.getElementById('swipeCard');
+    if (!card) return;
+
+    let startX = 0;
+    let currentX = 0;
+
+    const onStart = (e) => {
+        startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+        card.style.transition = 'none';
+    };
+
+    const onMove = (e) => {
+        if (!startX) return;
+        currentX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+        const diff = currentX - startX;
+        const rotate = diff / 10;
+        card.style.transform = `translateX(${diff}px) rotate(${rotate}deg)`;
+
+        if (Math.abs(diff) > 50) {
+            card.style.borderColor = diff > 0 ? '#22c55e' : '#ef4444';
+        } else {
+            card.style.borderColor = '#334155';
+        }
+    };
+
+    const onEnd = () => {
+        if (!startX) return;
+        const diff = currentX - startX;
+        card.style.transition = 'all 0.5s cubic-bezier(0.23, 1, 0.32, 1)';
+
+        if (diff > 100) {
+            handleSwipe('right');
+        } else if (diff < -100) {
+            handleSwipe('left');
+        } else {
+            card.style.transform = '';
+            card.style.borderColor = '#334155';
+        }
+        startX = 0;
+    };
+
+    card.addEventListener('mousedown', onStart);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onEnd);
+
+    card.addEventListener('touchstart', onStart);
+    window.addEventListener('touchmove', onMove);
+    window.addEventListener('touchend', onEnd);
 }
 
 function handleSwipe(dir) {
