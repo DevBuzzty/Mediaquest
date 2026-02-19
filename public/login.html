@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lehrer Login - Weltenretter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex items-center justify-center p-4">
+    <div class="bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-700 w-full max-w-md">
+        <h2 class="text-3xl font-bold mb-6 text-center text-blue-500">Lehrer Login</h2>
+        <form id="loginForm" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-400 mb-1">Benutzername</label>
+                <input type="text" id="username" required autofocus class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-400 mb-1">Passwort</label>
+                <input type="password" id="password" required class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
+            </div>
+            <div id="errorMessage" class="text-red-500 text-sm hidden"></div>
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Anmelden</button>
+        </form>
+        <div class="mt-6 text-center space-y-2">
+            <a href="/register.html" class="block text-blue-400 hover:text-blue-300 text-sm font-medium">Noch keinen Account? Registrieren</a>
+            <a href="/" class="block text-slate-400 hover:text-white text-sm">Zurück zur Startseite</a>
+        </div>
+    </div>
+    <script src="/js/ui.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+            if (data.success) window.location.href = '/teacher.html';
+            else {
+                const err = document.getElementById('errorMessage');
+                err.textContent = data.error;
+                err.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
