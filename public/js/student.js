@@ -89,7 +89,9 @@ async function renderNextTask() {
     }
 
     const task = tasks[currentTaskIndex] || {};
-    renderGame(currentGameType, task, tasks.length);
+    // Use the type defined in the task itself
+    const mode = task.type || currentGameType;
+    renderGame(mode, task, tasks.length);
 }
 
 function completeTask() {

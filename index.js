@@ -68,147 +68,56 @@ async function ensureDefaultBlueprints(teacherId) {
 
     const examples = [
         {
-            title: "News-Check",
-            game_type: "binary",
+            title: "Weltenretter Starter-Runde",
+            game_type: "template",
             tasks: [
-                { question: "Ist diese Schlagzeile echt?", icon: "🗞️" },
-                { question: "Wurde dieses Foto manipuliert?", icon: "🖼️" }
-            ]
-        },
-        {
-            title: "Sicherheit-Quiz",
-            game_type: "choice",
-            tasks: [
-                { question: "Was ist Phishing?", options: ["Ein Spiel", "Daten-Diebstahl", "Hardware-Fehler"] },
-                { question: "USB-Sticks von Fremden...", options: ["Nutzbar", "Gefährlich", "Immer gut"] }
-            ]
-        },
-        {
-            title: "Apps-Berechtigungen",
-            game_type: "select",
-            tasks: [
-                { question: "Was braucht eine Taschenlampe?", options: ["Kamera/Blitz", "Kontakte", "GPS-Standort", "Mikrofon"] }
-            ]
-        },
-        {
-            title: "Sicherer Chat",
-            game_type: "chat",
-            tasks: [
+                { type: "binary", question: "Wurde dieses Foto manipuliert?", icon: "🖼️" },
                 {
-                    partner: "Anonym",
+                    type: "choice",
+                    question: "Woran erkennst du eine seriöse Quelle?",
+                    options: ["A) Am Design", "B) Am Impressum", "C) An vielen Likes"]
+                },
+                {
+                    type: "chat",
+                    partner: "ZockerPro",
                     nodes: {
-                        "start": { "text": "Hi, schickst du mir ein Foto von dir?", "options": [{ "label": "Klar!", "next": "bad" }, { "label": "Nein.", "next": "good" }] },
-                        "bad": { "text": "Vorsicht! Schicke niemals Fotos an Unbekannte.", "options": [] },
-                        "good": { "text": "Gute Entscheidung!", "options": [] }
+                        "start": { "text": "Gibst du mir dein Passwort für gratis Coins?", "options": [{ "label": "Klar!", "next": "bad" }, { "label": "Nein!", "next": "good" }] },
+                        "bad": { "text": "Account gehackt!", "options": [] },
+                        "good": { "text": "Sicher geblieben!", "options": [] }
                     }
-                }
-            ]
-        },
-        {
-            title: "Social Feed",
-            game_type: "scroller",
-            tasks: [
+                },
                 {
+                    type: "scroller",
                     posts: [
-                        { user: "FakeNews", text: "Gummibärchen-Regen morgen!", isBad: true },
-                        { user: "News", text: "Schule fällt morgen aus.", isBad: true },
-                        { user: "User", text: "Schönen Tag!", isBad: false },
-                        { user: "Bot", text: "Klick hier für 1 Million!", isBad: true },
-                        { user: "Chef", text: "Neues Rezept online.", isBad: false },
-                        { user: "Hater", text: "Du bist doof!", isBad: true },
-                        { user: "Freund", text: "Kommst du spielen?", isBad: false },
-                        { user: "Spam", text: "Kaufe jetzt!", isBad: true },
-                        { user: "Lokal", text: "Katze gerettet.", isBad: false },
-                        { user: "Wetter", text: "Sonne pur.", isBad: false }
+                        { user: "Bot1", text: "Klick hier für Geld!", isBad: true },
+                        { user: "User1", text: "Hund ist weggelaufen.", isBad: false },
+                        { user: "Bot2", text: "Gratis Gummibärchenregen!", isBad: true },
+                        { user: "News", text: "Wetter ist sonnig.", isBad: false },
+                        { user: "Hater", text: "Du bist so dumm!", isBad: true },
+                        { user: "Friend", text: "Lust auf Fußball?", isBad: false },
+                        { user: "Bot3", text: "Deine IP wurde gefunden!", isBad: true },
+                        { user: "Cook", text: "Neues Rezept online.", isBad: false },
+                        { user: "Scam", text: "Gewinnspiel: iPhone!", isBad: true },
+                        { user: "Lokal", text: "Feuerwehr im Einsatz.", isBad: false }
+                    ]
+                },
+                {
+                    type: "bucket",
+                    buckets: ["Privat", "Öffentlich"],
+                    items: [
+                        { text: "Passwort", target: 0 },
+                        { text: "Vorname", target: 1 }
                     ]
                 }
             ]
         },
         {
-            title: "KI-Fehler Suche",
-            game_type: "detector",
+            title: "Social Media Führerschein",
+            game_type: "template",
             tasks: [
-                { question: "Finde Details im KI-Bild.", image: "https://via.placeholder.com/800x600?text=KI+Bild+Beispiel" }
-            ]
-        },
-        {
-            title: "Spuren im Netz",
-            game_type: "hotspot",
-            tasks: [
-                {
-                    image: "https://via.placeholder.com/800x600?text=Webseite+Beispiel",
-                    zones: [{ x: 10, y: 10, w: 20, h: 10 }]
-                }
-            ]
-        },
-        {
-            title: "Tresor-Training",
-            game_type: "password",
-            tasks: [
-                { rules: ["10 Zeichen", "1 Sonderzeichen"], solution: "" }
-            ]
-        },
-        {
-            title: "Foto-Mission",
-            game_type: "photo",
-            tasks: [
-                { question: "Fotografiere ein Warnschild." }
-            ]
-        },
-        {
-            title: "Deine Meinung",
-            game_type: "statement",
-            tasks: [
-                { question: "Was bedeutet Freiheit im Netz?" }
-            ]
-        },
-        {
-            title: "Mein Online-Profil",
-            game_type: "profile",
-            tasks: [
-                { fields: ["name", "ort"], customFields: ["Hobby"] }
-            ]
-        },
-        {
-            title: "Stimmungs-Check",
-            game_type: "mood",
-            tasks: [
-                { question: "Cybermobbing ist...", labelLeft: "Schlimm", labelRight: "Egal" }
-            ]
-        },
-        {
-            title: "Daten-Sortierung",
-            game_type: "bucket",
-            tasks: [
-                { buckets: ["Sicher", "Riskanter"], items: [{ text: "Spitzname", target: 0 }, { text: "Passwort", target: 1 }] }
-            ]
-        },
-        {
-            title: "Wichtigkeit",
-            game_type: "ranking",
-            tasks: [
-                { items: ["Privatsphäre", "Spaß", "Sicherheit"] }
-            ]
-        },
-        {
-            title: "Zuordnung",
-            game_type: "pairs",
-            tasks: [
-                { pairs: [{ left: "Browser", right: "Internet" }, { left: "Passwort", right: "Schloss" }] }
-            ]
-        },
-        {
-            title: "Regeln",
-            game_type: "cloze",
-            tasks: [
-                { text: "Ich bin [vorsichtig] im Netz.", fakes: ["dumm", "laut"] }
-            ]
-        },
-        {
-            title: "Recherche-Zeit",
-            game_type: "countdown",
-            tasks: [
-                { duration: 15, question: "Schnell! Wer hat das Internet erfunden?" }
+                { type: "mood", question: "Wie fühlst du dich bei Hass-Kommentaren?", labelLeft: "Schlecht", labelRight: "Egal" },
+                { type: "profile", fields: ["name", "ort"], customFields: ["Hobby"] },
+                { type: "statement", question: "Was ist dein Tipp gegen Cybermobbing?" }
             ]
         }
     ];
@@ -219,7 +128,7 @@ async function ensureDefaultBlueprints(teacherId) {
             [teacherId, ex.title, ex.game_type, JSON.stringify({ tasks: ex.tasks }), new Date().toISOString()]
         );
     }
-    console.log(`Examples (V3) seeded for teacher ${teacherId}`);
+    console.log(`Examples seeded for teacher ${teacherId}`);
 }
 
 ensureDefaultAccounts();
@@ -309,6 +218,19 @@ app.post('/api/login', async (req, res) => {
         } else {
             res.status(401).json({ error: 'Ungültige Anmeldedaten' });
         }
+    } catch (err) {
+        res.status(500).json({ error: 'Datenbankfehler' });
+    }
+});
+
+app.patch('/api/blueprints/:id', isAuthenticated, async (req, res) => {
+    const { title, gameType, content } = req.body;
+    try {
+        await dbAsync.run(
+            'UPDATE blueprints SET title = ?, game_type = ?, content = ? WHERE id = ? AND teacher_id = ?',
+            [title, gameType, JSON.stringify(content), req.params.id, req.session.teacherId]
+        );
+        res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: 'Datenbankfehler' });
     }

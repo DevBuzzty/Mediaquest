@@ -250,7 +250,7 @@ document.getElementById('startSessionBtn').addEventListener('click', async () =>
     const res = await fetch('/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ maxTeams, gameType: bp.game_type, blueprintId })
+        body: JSON.stringify({ maxTeams, gameType: 'template', blueprintId })
     });
     if (res.ok) loadActiveSession();
     else alert('Fehler beim Starten der Session');
