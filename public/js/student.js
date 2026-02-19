@@ -914,3 +914,5 @@ document.getElementById('createTeamBtn')?.addEventListener('click', async () => 
         console.error(err);
     }
 });
+
+enableTouchDrag();

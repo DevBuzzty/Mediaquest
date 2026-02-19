@@ -33,23 +33,171 @@ async function ensureDefaultAccounts() {
     try {
         // Test account
         const testUser = await dbAsync.get('SELECT * FROM teachers WHERE username = ?', ['test']);
+        let testId;
         if (!testUser) {
             const hashedPass = await bcrypt.hash('test', 10);
-            await dbAsync.run('INSERT INTO teachers (username, password) VALUES (?, ?)', ['test', hashedPass]);
+            const res = await dbAsync.run('INSERT INTO teachers (username, password) VALUES (?, ?)', ['test', hashedPass]);
+            testId = res.lastID;
             console.log('Test account (test:test) created.');
+        } else {
+            testId = testUser.id;
         }
 
         // Admin account
         const adminUser = await dbAsync.get('SELECT * FROM teachers WHERE username = ?', ['admin']);
+        let adminId;
         if (!adminUser) {
             const hashedPass = await bcrypt.hash('admin', 10);
-            await dbAsync.run('INSERT INTO teachers (username, password) VALUES (?, ?)', ['admin', hashedPass]);
+            const res = await dbAsync.run('INSERT INTO teachers (username, password) VALUES (?, ?)', ['admin', hashedPass]);
+            adminId = res.lastID;
             console.log('Admin account (admin:admin) created.');
+        } else {
+            adminId = adminUser.id;
         }
+
+        await ensureDefaultBlueprints(testId);
+        await ensureDefaultBlueprints(adminId);
     } catch (err) {
         console.error('Error creating default accounts:', err);
     }
 }
+
+async function ensureDefaultBlueprints(teacherId) {
+    const existing = await dbAsync.get('SELECT id FROM blueprints WHERE teacher_id = ? LIMIT 1', [teacherId]);
+    if (existing) return;
+
+    const examples = [
+        {
+            title: "Echt oder Fake? (Swipe)",
+            game_type: "binary",
+            content: { question: "Ist dieses Foto von einem fliegenden Hund echt?", icon: "🐕" }
+        },
+        {
+            title: "Impressum-Check (Quiz)",
+            game_type: "choice",
+            content: {
+                question: "Woran erkennst du eine seriöse Website am schnellsten?",
+                options: ["A) An den bunten Bildern", "B) An einem vollständigen Impressum", "C) Daran, dass sie oben in der Suche steht"]
+            }
+        },
+        {
+            title: "Sicheres Passwort",
+            game_type: "password",
+            content: { rules: ["Mindestens 8 Zeichen", "Enthält ein !", "Enthält eine Zahl"], solution: "" }
+        },
+        {
+            title: "Daten-Detektiv (Kategorien)",
+            game_type: "bucket",
+            content: {
+                buckets: ["Privat", "Öffentlich"],
+                items: [
+                    { text: "Meine Telefonnummer", target: 0 },
+                    { text: "Meine Lieblingsfarbe", target: 1 },
+                    { text: "Mein Passwort", target: 0 },
+                    { text: "Mein Vorname", target: 1 }
+                ]
+            }
+        },
+        {
+            title: "Chat mit Unbekannt",
+            game_type: "chat",
+            content: {
+                partner: "ZockerPro_07",
+                nodes: {
+                    "start": { "text": "Hey! Ich hab gesehen du spielst auch Roblox. Willst du meine Robux haben?", "options": [{ "label": "Klar, gerne!", "next": "yes" }, { "label": "Wer bist du überhaupt?", "next": "who" }] },
+                    "yes": { "text": "Ok, gib mir einfach kurz dein Passwort, dann lad ich sie dir auf das Konto.", "options": [{ "label": "Hier hast du es...", "next": "scam" }, { "label": "Niemals!", "next": "safe" }] },
+                    "who": { "text": "Ich bin auch aus deiner Schule. Vertrau mir einfach.", "options": [{ "label": "Ok...", "next": "yes" }] },
+                    "scam": { "text": "Danke! (Dein Account wurde soeben gehackt)", "options": [] },
+                    "safe": { "text": "Gute Entscheidung! Gib niemals dein Passwort weiter.", "options": [] }
+                }
+            }
+        },
+        {
+            title: "Social Media Feed",
+            game_type: "scroller",
+            content: {
+                posts: [
+                    { user: "WahrheitsFinder", text: "Wusstet ihr, dass Zitronen gegen Computer-Viren helfen? 🍋", isBad: true },
+                    { user: "SportFreak", text: "Heute 5km gelaufen! 🏃‍♂️", isBad: false },
+                    { user: "Anonymus", text: "Alle Schüler aus der 4b sind total doof!", isBad: true }
+                ]
+            }
+        },
+        {
+            title: "Phishing-Mail Hotspots",
+            game_type: "hotspot",
+            content: {
+                image: "https://via.placeholder.com/800x400?text=Phishing+E-Mail+Beispiel",
+                zones: [{ x: 10, y: 10, w: 30, h: 10 }, { x: 50, y: 70, w: 20, h: 15 }]
+            }
+        },
+        {
+            title: "Passwort-Ranking",
+            game_type: "ranking",
+            content: { items: ["123456", "Passwort123", "S1cheres!Pw_2024"] }
+        },
+        {
+            title: "Lückentext Quellen",
+            game_type: "cloze",
+            content: { text: "Bevor ich eine Nachricht teile, prüfe ich die [Quelle]. Ich schaue ins [Impressum] und suche nach anderen [Webseiten], die das Gleiche berichten." }
+        },
+        {
+            title: "Begriffe zuordnen",
+            game_type: "pairs",
+            content: {
+                pairs: [
+                    { left: "Cookie", right: "Speichert Daten" },
+                    { left: "Verschlüsselung", right: "Schützt Nachrichten" },
+                    { left: "Hacker", right: "Sucht Sicherheitslücken" }
+                ]
+            }
+        },
+        {
+            title: "Foto-Aufgabe",
+            game_type: "photo",
+            content: { question: "Mache ein Foto von einem QR-Code im Klassenzimmer." }
+        },
+        {
+            title: "Mein Statement",
+            game_type: "statement",
+            content: { question: "Was ist für dich das Wichtigste im Internet?" }
+        },
+        {
+            title: "Gaming-Profil",
+            game_type: "profile",
+            content: { fields: ["name", "hobbies", "photo"], customFields: ["Lieblingsspiel"] }
+        },
+        {
+            title: "Gefühls-Check",
+            game_type: "mood",
+            content: { question: "Wie fühlst du dich, wenn jemand ein peinliches Foto von dir postet?", labelLeft: "Sehr traurig", labelRight: "Egal" }
+        },
+        {
+            title: "Blitz-Recherche",
+            game_type: "countdown",
+            content: { duration: 30, question: "Findet im Team 3 Merkmale für Fake News!" }
+        },
+        {
+            title: "Bildfehler finden",
+            game_type: "detector",
+            content: { question: "Finde die KI-Fehler im Bild.", image: "https://via.placeholder.com/800x400?text=KI+Generiertes+Bild" }
+        },
+        {
+            title: "Datenschutz-Wahl",
+            game_type: "select",
+            content: { question: "Welche dieser Daten sind besonders schützenswert?", options: ["Wohnort", "Telefonnummer", "Lieblingsfarbe", "E-Mail-Adresse"] }
+        }
+    ];
+
+    for (const ex of examples) {
+        await dbAsync.run(
+            'INSERT INTO blueprints (teacher_id, title, game_type, content, created_at) VALUES (?, ?, ?, ?, ?)',
+            [teacherId, ex.title, ex.game_type, JSON.stringify(ex.content), new Date().toISOString()]
+        );
+    }
+    console.log(`Examples seeded for teacher ${teacherId}`);
+}
+
 ensureDefaultAccounts();
 
 app.use(express.json());

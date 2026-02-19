@@ -63,6 +63,8 @@ Zum schnellen Testen sind folgende Accounts hinterlegt:
 - **Admin:** `admin` / `admin`
 - **Test:** `test` / `test`
 
+*Hinweis: Diese Accounts sind bereits mit 17 Beispiel-Minispielen (Blueprints) vorbefüllt.*
+
 ### 🎨 Blueprint Creator (Inhalte erstellen)
 Der Blueprint Creator ist nicht über das Dashboard verlinkt, sondern kann direkt über diesen Link aufgerufen werden:
 👉 [http://localhost:3000/blueprints.html](http://localhost:3000/blueprints.html)
