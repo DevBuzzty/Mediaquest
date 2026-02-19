@@ -78,17 +78,27 @@ async function loadActiveSession() {
             document.getElementById('gameView').classList.remove('hidden');
 
             const bp = data.session.blueprint;
-            if (bp?.content?.templateType === 'qr') {
-                document.getElementById('activeGameModeDisplay').innerHTML = `
-                    <div class="flex flex-col items-center gap-2">
-                        <span>QR-MODE: ${bp.title}</span>
-                        <button onclick="showSessionQrCodes()" class="bg-blue-600 hover:bg-blue-500 text-[10px] px-3 py-1 rounded-full text-white font-black uppercase tracking-widest transition-all">QR-Codes anzeigen</button>
-                    </div>
-                `;
+            if (bp) {
                 window.currentActiveBlueprint = bp;
+                renderTemplateOverview(bp);
+                if (bp.content?.templateType === 'qr') {
+                    document.getElementById('activeGameModeDisplay').innerHTML = `
+                        <div class="flex flex-col items-center gap-2">
+                            <span>QR-MODE: ${bp.title}</span>
+                            <button onclick="showSessionQrCodes()" class="bg-blue-600 hover:bg-blue-500 text-[10px] px-3 py-1 rounded-full text-white font-black uppercase tracking-widest transition-all">QR-Codes anzeigen</button>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('activeGameModeDisplay').textContent = `${bp.title} (${data.session.game_type})`;
+                }
             } else {
                 document.getElementById('activeGameModeDisplay').textContent = data.session.game_type;
+                document.getElementById('templateOverviewList').innerHTML = '<p class="text-xs text-slate-500 italic">Kein Template aktiv.</p>';
             }
+
+            const gameTeamList = document.getElementById('activeGameTeamList');
+            gameTeamList.innerHTML = '';
+            data.teams.forEach(team => addTeamCardToGame(team));
 
             loadSubmissions(data.session.id);
         } else {
@@ -158,6 +168,25 @@ socket.on('teamCreated', addTeamCard);
 socket.on('teamDeleted', (id) => {
     const card = document.getElementById(`team-card-${id}`);
     if (card) card.remove();
+    const gameCard = document.getElementById(`game-team-card-${id}`);
+    if (gameCard) gameCard.remove();
+});
+
+socket.on('teamTaskUpdate', (data) => {
+    const statusEl = document.getElementById(`team-status-${data.teamId}`);
+    if (statusEl) {
+        statusEl.innerHTML = `
+            <div class="flex flex-col">
+                <span class="text-[9px] uppercase font-black text-blue-500">Aktuelle Aufgabe</span>
+                <span class="text-xs font-bold text-white">${data.taskTitle || `Station ${data.taskIndex + 1}`}</span>
+            </div>
+        `;
+        const card = document.getElementById(`game-team-card-${data.teamId}`);
+        if (card) {
+            card.classList.add('ring-2', 'ring-blue-500', 'bg-slate-700');
+            setTimeout(() => card.classList.remove('ring-2', 'ring-blue-500'), 2000);
+        }
+    }
 });
 
 socket.on('newSubmission', (data) => {
@@ -170,6 +199,68 @@ async function loadSubmissions(sessionId) {
     const list = document.getElementById('submissionsList');
     list.innerHTML = '';
     data.submissions.forEach(addSubmissionCard);
+}
+
+function renderTemplateOverview(bp) {
+    const list = document.getElementById('templateOverviewList');
+    list.innerHTML = '';
+
+    if (!bp.content?.tasks) return;
+
+    bp.content.tasks.forEach((task, i) => {
+        const item = document.createElement('div');
+        item.className = 'bg-slate-800 p-3 rounded-xl border border-slate-700 flex flex-col gap-1';
+
+        const typeIcon = getTaskIcon(task.type);
+
+        item.innerHTML = `
+            <div class="flex justify-between items-center">
+                <span class="text-[10px] font-black text-slate-500 uppercase">Station ${i+1}</span>
+                <span class="text-[10px] bg-slate-700 px-2 py-0.5 rounded text-blue-400 font-mono">${task.code || '---'}</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-lg">${typeIcon}</span>
+                <span class="text-xs font-bold text-slate-300 truncate">${task.question || task.type}</span>
+            </div>
+        `;
+        list.appendChild(item);
+    });
+}
+
+function getTaskIcon(type) {
+    const icons = {
+        'binary': '↔️', 'choice': '🔘', 'select': '✅', 'chat': '💬',
+        'scroller': '📱', 'detector': '🔍', 'hotspot': '🎯', 'password': '🔐',
+        'photo': '📸', 'statement': '📝', 'profile': '👤', 'mood': '🌡️',
+        'bucket': '🗑️', 'ranking': '🔢', 'pairs': '🔗', 'cloze': '🔤', 'countdown': '⏳'
+    };
+    return icons[type] || '🎮';
+}
+
+function addTeamCardToGame(team) {
+    const list = document.getElementById('activeGameTeamList');
+    const card = document.createElement('div');
+    card.id = `game-team-card-${team.id}`;
+    card.className = 'bg-slate-800/50 p-4 rounded-2xl border-l-4 border-slate-700 flex items-center justify-between transition-all';
+    card.style.borderLeftColor = team.color;
+
+    card.innerHTML = `
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-black" style="background-color: ${team.color}">
+                ${team.name.charAt(0)}
+            </div>
+            <div>
+                <h4 class="font-bold text-sm">${team.name}</h4>
+                <div id="team-status-${team.id}" class="mt-1">
+                    <span class="text-[10px] text-slate-500 italic">Wartet auf Start...</span>
+                </div>
+            </div>
+        </div>
+        <div class="text-[9px] font-black text-slate-600 bg-slate-900 px-2 py-1 rounded">
+            SIZE: ${team.group_size}
+        </div>
+    `;
+    list.appendChild(card);
 }
 
 function addSubmissionCard(sub) {

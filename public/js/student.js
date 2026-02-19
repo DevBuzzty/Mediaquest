@@ -166,6 +166,16 @@ async function completeTask() {
 
 // Mini-Games Rendering
 function renderGame(mode, task, totalTasks) {
+    // Report progress to teacher
+    if (currentSessionId && currentTeamId) {
+        socket.emit('reportTaskStart', {
+            sessionId: currentSessionId,
+            teamId: currentTeamId,
+            taskIndex: currentTaskIndex,
+            taskTitle: task.question || task.type
+        });
+    }
+
     const container = document.getElementById('gameContent');
     container.style.opacity = '0';
 

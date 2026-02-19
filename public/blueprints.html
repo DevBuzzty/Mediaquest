@@ -23,8 +23,18 @@
                 <span class="text-2xl">+</span> NEUE SPIELRUNDE
             </button>
 
-            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
-                <h2 class="text-xl font-bold mb-4 text-slate-300">Deine Templates</h2>
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-slate-300">Deine Templates</h2>
+                    <div class="flex gap-1">
+                        <button onclick="document.getElementById('importFile').click()" class="p-2 hover:bg-slate-700 rounded-lg text-slate-400" title="Importieren">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                        </button>
+                        <input type="file" id="importFile" class="hidden" accept=".json" onchange="importBlueprint(this)">
+                    </div>
+                </div>
                 <div id="blueprintList" class="space-y-2 max-h-[600px] overflow-y-auto pr-2">
                     <!-- List injected by JS -->
                 </div>

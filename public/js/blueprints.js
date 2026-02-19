@@ -703,14 +703,20 @@ async function loadBlueprints() {
                 <div class="flex gap-2 mt-2">
                     <span class="text-[9px] bg-blue-600/20 text-blue-400 px-2 py-0.5 rounded font-black uppercase">${bp.content.tasks.length} GAMES</span>
                     <span class="text-[9px] ${bp.content.templateType === 'qr' ? 'bg-purple-600/20 text-purple-400' : 'bg-green-600/20 text-green-400'} px-2 py-0.5 rounded font-black uppercase">${bp.content.templateType === 'qr' ? 'QR-MODE' : 'NORMAL'}</span>
-                    <span class="text-[9px] bg-slate-800 text-slate-500 px-2 py-0.5 rounded font-black uppercase">ID: ${bp.id}</span>
                 </div>
             </div>
-            <button onclick="deleteBlueprint(${bp.id})" class="absolute right-4 top-4 text-slate-700 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                </svg>
-            </button>
+            <div class="absolute right-2 top-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                <button onclick="exportBlueprint(${bp.id})" class="text-slate-500 hover:text-blue-400" title="Exportieren">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                </button>
+                <button onclick="deleteBlueprint(${bp.id})" class="text-slate-500 hover:text-red-500" title="Löschen">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
         `;
         list.appendChild(div);
     });
@@ -731,6 +737,61 @@ async function deleteBlueprint(id) {
     if (!await WeltenretterUI.confirm('Möchtest du dieses Template unwiderruflich löschen?', 'Template löschen', '🗑️')) return;
     const res = await fetch(`/api/blueprints/${id}`, { method: 'DELETE' });
     if (res.ok) loadBlueprints();
+}
+
+function exportBlueprint(id) {
+    const bp = blueprints.find(b => b.id === id);
+    if (!bp) return;
+
+    const dataStr = JSON.stringify(bp, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Weltenretter_Template_${bp.title.replace(/\s+/g, '_')}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+async function importBlueprint(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            // Basic validation
+            if (!data.title || !data.content || !data.content.tasks) {
+                throw new Error('Ungültiges Template-Format');
+            }
+
+            // Save via API
+            const res = await fetch('/api/blueprints', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: data.title + ' (Import)',
+                    gameType: data.game_type || 'template',
+                    content: data.content
+                })
+            });
+
+            if (res.ok) {
+                WeltenretterUI.alert('Template erfolgreich importiert!', 'Erfolg', '✅');
+                loadBlueprints();
+            } else {
+                throw new Error('Fehler beim Speichern des importierten Templates');
+            }
+        } catch (err) {
+            WeltenretterUI.alert(err.message, 'Fehler', '❌');
+        }
+        input.value = '';
+    };
+    reader.readAsText(file);
 }
 
 checkAuth();

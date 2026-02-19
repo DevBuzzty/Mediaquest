@@ -44,19 +44,36 @@
                 </div>
 
                 <!-- Game Running View (Placeholder) -->
-                <div id="gameView" class="hidden text-center py-12 space-y-8">
-                    <div class="inline-block p-6 bg-green-900/30 rounded-full animate-pulse border-4 border-green-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                <div id="gameView" class="hidden py-8 space-y-8">
+                    <div class="flex flex-col lg:flex-row gap-8">
+                        <div class="flex-1 space-y-8">
+                            <div class="text-center">
+                                <div class="inline-block p-4 bg-green-900/30 rounded-full animate-pulse border-2 border-green-500 mb-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <h2 class="text-4xl font-black text-green-400 mb-2 uppercase tracking-widest">Das Spiel läuft</h2>
+                                <p class="text-lg text-slate-400">Aktueller Modus: <span id="activeGameModeDisplay" class="text-blue-400 font-bold uppercase"></span></p>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="activeGameTeamList">
+                                <!-- Enhanced Team Cards here -->
+                            </div>
+                        </div>
+
+                        <div class="w-full lg:w-80 space-y-6">
+                            <div class="bg-slate-700/50 p-6 rounded-2xl border border-slate-600">
+                                <h3 class="text-sm font-black text-blue-400 uppercase tracking-widest mb-4">Template & Stationen</h3>
+                                <div id="templateOverviewList" class="space-y-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                                    <p class="text-xs text-slate-500 italic">Lade Template-Details...</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <h2 class="text-5xl font-black text-green-400 mb-4 uppercase tracking-widest">Das Spiel läuft</h2>
-                        <p class="text-xl text-slate-400">Aktueller Modus: <span id="activeGameModeDisplay" class="text-blue-400 font-bold uppercase"></span></p>
-                        <p class="text-slate-500 mt-2">Beobachte deine Teams bei der Forschung...</p>
-                    </div>
-                    <div class="pt-8 space-y-4">
+
+                    <div class="pt-8 space-y-4 border-t border-slate-700">
                         <div class="flex flex-col items-center gap-4 bg-slate-700/50 p-4 rounded-xl border border-slate-600">
                             <span class="text-sm font-bold text-blue-400 uppercase tracking-tight">Dev-Modus: Blueprint live senden</span>
                             <div id="devBlueprintList" class="flex flex-wrap justify-center gap-2">

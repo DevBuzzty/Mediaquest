@@ -646,6 +646,11 @@ io.on('connection', (socket) => {
         socket.join(`session_${sessionId}`);
     });
 
+    socket.on('reportTaskStart', (data) => {
+        const { sessionId, teamId, taskIndex, taskTitle } = data;
+        io.to(`session_${sessionId}`).emit('teamTaskUpdate', { teamId, taskIndex, taskTitle });
+    });
+
     socket.on('studentSubmission', async (data) => {
         try {
             const { sessionId, teamId, type, content } = data;
