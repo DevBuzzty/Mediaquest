@@ -26,14 +26,14 @@ function updateBlueprintSelects() {
     const devList = document.getElementById('devBlueprintList');
     if (!mainSelect || !devList) return;
 
-    mainSelect.innerHTML = '<option value="">Zufälliger Platzhalter</option>';
+    mainSelect.innerHTML = '<option value="">Spielrunde wählen...</option>';
     devList.innerHTML = '';
 
     myBlueprints.forEach(bp => {
         // Add to main select
         const opt = document.createElement('option');
         opt.value = bp.id;
-        opt.textContent = `[${bp.game_type}] ${bp.title}`;
+        opt.textContent = `${bp.title} (${bp.game_type})`;
         mainSelect.appendChild(opt);
 
         // Add to dev list
@@ -45,11 +45,22 @@ function updateBlueprintSelects() {
     });
 }
 
-function toggleBlueprintSelect(gameType) {
-    const container = document.getElementById('blueprintSelectContainer');
-    container.classList.remove('hidden');
-    // We could filter the select here if we wanted to
-}
+document.getElementById('blueprintSelect')?.addEventListener('change', (e) => {
+    const bpId = e.target.value;
+    const info = document.getElementById('selectedTemplateInfo');
+    const countDisp = document.getElementById('taskCountDisplay');
+
+    if (!bpId) {
+        info.classList.add('hidden');
+        return;
+    }
+
+    const bp = myBlueprints.find(b => b.id == bpId);
+    if (bp) {
+        info.classList.remove('hidden');
+        countDisp.textContent = bp.content.tasks.length;
+    }
+});
 
 async function loadActiveSession() {
     const res = await fetch('/api/sessions/active');
@@ -123,7 +134,7 @@ function addTeamCard(team) {
 }
 
 async function deleteTeam(id, name) {
-    if (!confirm(`Team "${name}" wirklich löschen?`)) return;
+    if (!await confirm(`Team "${name}" wirklich löschen?`)) return;
     const res = await fetch(`/api/teams/${id}`, { method: 'DELETE' });
     if (!res.ok) alert('Fehler beim Löschen');
 }
@@ -188,7 +199,7 @@ async function loadHistory() {
 }
 
 async function reopenSession(id) {
-    if (!confirm('Diese Session wieder eröffnen? Eine eventuell aktive Session wird dabei geschlossen.')) return;
+    if (!await confirm('Diese Session wieder eröffnen? Eine eventuell aktive Session wird dabei geschlossen.')) return;
     const res = await fetch(`/api/sessions/${id}/reopen`, { method: 'POST' });
     if (res.ok) loadActiveSession();
     else alert('Fehler beim Wiedereröffnen');
@@ -230,13 +241,16 @@ async function viewDetails(id, code) {
 
 document.getElementById('startSessionBtn').addEventListener('click', async () => {
     const maxTeams = parseInt(document.getElementById('maxTeams').value);
-    const gameType = document.getElementById('gameType').value;
     const blueprintId = document.getElementById('blueprintSelect').value;
+
+    if (!blueprintId) return WeltenretterUI.alert('Bitte wähle ein Spielrunden-Template aus!', 'Fehlende Auswahl', '⚠️');
+
+    const bp = myBlueprints.find(b => b.id == blueprintId);
 
     const res = await fetch('/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ maxTeams, gameType, blueprintId })
+        body: JSON.stringify({ maxTeams, gameType: bp.game_type, blueprintId })
     });
     if (res.ok) loadActiveSession();
     else alert('Fehler beim Starten der Session');
@@ -264,7 +278,7 @@ document.getElementById('startGameBtn').addEventListener('click', async () => {
 });
 
 document.getElementById('endGameBtn').addEventListener('click', async () => {
-    if (!confirm('Spiel beenden?')) return;
+    if (!await confirm('Spiel beenden?')) return;
     const res = await fetch('/api/sessions/active/end', { method: 'POST' });
     if (res.ok) {
         document.getElementById('lobbyView').classList.remove('hidden');
@@ -301,7 +315,7 @@ async function showSummaryView() {
 }
 
 document.getElementById('closeSessionBtn').addEventListener('click', async () => {
-    if (!confirm('Session wirklich schließen?')) return;
+    if (!await confirm('Session wirklich schließen?')) return;
     await fetch('/api/sessions/close', { method: 'POST' });
     loadActiveSession();
     loadHistory();

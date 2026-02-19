@@ -93,50 +93,33 @@
         <section id="noActiveSessionContainer" class="hidden">
             <div class="bg-slate-800 rounded-2xl p-12 border border-slate-700 shadow-lg text-center">
                 <h2 class="text-3xl font-bold mb-4">Keine aktive Session</h2>
-                <div class="flex flex-col items-center gap-4">
-                    <div class="flex flex-col md:flex-row items-center gap-6">
-                        <div class="flex items-center gap-2">
-                            <label for="maxTeams" class="text-slate-400">Anzahl Teams (max):</label>
-                            <input type="number" id="maxTeams" value="5" min="1" max="10" class="bg-slate-700 border border-slate-600 rounded px-2 py-1 w-16">
+                <div class="flex flex-col items-center gap-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-2xl">
+                        <div class="bg-slate-700/30 p-6 rounded-2xl border border-slate-700 text-left">
+                            <label class="block text-xs font-black uppercase text-slate-500 mb-2 tracking-widest">1. Session-Einstellungen</label>
+                            <div class="flex items-center gap-4">
+                                <span class="text-sm text-slate-300">Max. Teams:</span>
+                                <input type="number" id="maxTeams" value="5" min="1" max="10" class="bg-slate-900 border border-slate-600 rounded-xl px-4 py-2 w-20 text-center font-bold">
+                            </div>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <label for="gameType" class="text-slate-400">Spielmodus:</label>
-                            <select id="gameType" onchange="toggleBlueprintSelect(this.value)" class="bg-slate-700 border border-slate-600 rounded px-3 py-1">
-                                <optgroup label="Basis">
-                                    <option value="binary">Binary Swipe</option>
-                                    <option value="choice">Multiple Choice</option>
-                                    <option value="select">Multiple Select</option>
-                                </optgroup>
-                                <optgroup label="Interaktion">
-                                    <option value="chat">Chat-Simulator</option>
-                                    <option value="scroller">Feed-Scroller</option>
-                                    <option value="detector">Detektor (Lupe)</option>
-                                    <option value="hotspot">Hotspot-Bild</option>
-                                </optgroup>
-                                <optgroup label="Eingabe">
-                                    <option value="password">Passwort-Generator</option>
-                                    <option value="photo">Foto-Upload</option>
-                                    <option value="statement">Text-Statement</option>
-                                    <option value="profile">Profil-Editor</option>
-                                </optgroup>
-                                <optgroup label="Mechanik">
-                                    <option value="mood">Stimmungs-Barometer</option>
-                                    <option value="bucket">Bucket Drop</option>
-                                    <option value="ranking">Ranking</option>
-                                    <option value="pairs">Paare finden</option>
-                                    <option value="cloze">Lückentext</option>
-                                    <option value="countdown">Countdown</option>
-                                </optgroup>
-                            </select>
-                        </div>
-                        <div id="blueprintSelectContainer" class="hidden flex items-center gap-2">
-                            <label for="blueprintSelect" class="text-slate-400">Content-Blueprint:</label>
-                            <select id="blueprintSelect" class="bg-slate-700 border border-slate-600 rounded px-3 py-1 max-w-[200px]">
-                                <option value="">Zufälliger Platzhalter</option>
+
+                        <div class="bg-slate-700/30 p-6 rounded-2xl border border-slate-700 text-left">
+                            <label class="block text-xs font-black uppercase text-slate-500 mb-2 tracking-widest">2. Spielrunden-Template wählen</label>
+                            <select id="blueprintSelect" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 font-bold text-blue-400 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                                <option value="">Bitte wählen...</option>
                             </select>
                         </div>
                     </div>
-                    <button id="startSessionBtn" class="bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded-xl font-bold text-xl transition-all">Neue Session starten</button>
+
+                    <div id="selectedTemplateInfo" class="hidden text-slate-400 text-sm italic">
+                        Dieses Template enthält <span id="taskCountDisplay" class="font-bold text-white">0</span> Aufgaben-Sequenzen.
+                    </div>
+
+                    <button id="startSessionBtn" class="bg-blue-600 hover:bg-blue-700 px-12 py-5 rounded-2xl font-black text-2xl uppercase tracking-tighter shadow-2xl transition-all transform hover:scale-105 active:scale-95">
+                        Session mit Template starten
+                    </button>
+
+                    <p class="text-xs text-slate-500">Erstelle neue Templates im <a href="/blueprints.html" class="text-blue-500 underline">Blueprint Creator</a>.</p>
                 </div>
             </div>
         </section>
@@ -170,6 +153,7 @@
             </div>
         </div>
     </div>
+    <script src="/js/ui.js"></script>
     <script src="/js/teacher.js"></script>
 </body>
 </html>

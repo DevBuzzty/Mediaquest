@@ -1,3 +1,27 @@
+const categories = [
+    { id: 'binary', name: 'Binary Swipe', icon: '↔️', group: 'Basis' },
+    { id: 'choice', name: 'Multiple Choice', icon: '🔘', group: 'Basis' },
+    { id: 'select', name: 'Multiple Select', icon: '✅', group: 'Basis' },
+    { id: 'chat', name: 'Chat-Simulator', icon: '💬', group: 'Interaktion' },
+    { id: 'scroller', name: 'Feed-Scroller', icon: '📱', group: 'Interaktion' },
+    { id: 'detector', name: 'Detektor (Lupe)', icon: '🔍', group: 'Interaktion' },
+    { id: 'hotspot', name: 'Hotspot-Bild', icon: '🎯', group: 'Interaktion' },
+    { id: 'password', name: 'Passwort-Check', icon: '🔐', group: 'Eingabe' },
+    { id: 'photo', name: 'Foto-Upload', icon: '📸', group: 'Eingabe' },
+    { id: 'statement', name: 'Statement', icon: '📝', group: 'Eingabe' },
+    { id: 'profile', name: 'Profil-Editor', icon: '👤', group: 'Eingabe' },
+    { id: 'mood', name: 'Barometer', icon: '🌡️', group: 'Mechanik' },
+    { id: 'bucket', name: 'Bucket Drop', icon: '🗑️', group: 'Mechanik' },
+    { id: 'ranking', name: 'Ranking', icon: '🔢', group: 'Mechanik' },
+    { id: 'pairs', name: 'Paare finden', icon: '🔗', group: 'Mechanik' },
+    { id: 'cloze', name: 'Lückentext', icon: '🔤', group: 'Mechanik' },
+    { id: 'countdown', name: 'Countdown', icon: '⏳', group: 'Mechanik' }
+];
+
+let selectedCategory = null;
+let tasks = [];
+let blueprints = [];
+
 async function checkAuth() {
     const res = await fetch('/api/me');
     const data = await res.json();
@@ -6,330 +30,283 @@ async function checkAuth() {
     loadBlueprints();
 }
 
-const gameTypeSelect = document.getElementById('gameType');
-const dynamicFields = document.getElementById('dynamicFields');
-const previewContainer = document.getElementById('previewContainer');
-const blueprintForm = document.getElementById('blueprintForm');
+function renderCategories() {
+    const list = document.getElementById('categoryList');
+    list.innerHTML = '';
 
-gameTypeSelect.addEventListener('change', renderForm);
+    let lastGroup = '';
+    categories.forEach(cat => {
+        if (cat.group !== lastGroup) {
+            const h = document.createElement('p');
+            h.className = 'text-[10px] uppercase font-black text-slate-600 mt-4 mb-1 ml-2 tracking-widest';
+            h.textContent = cat.group;
+            list.appendChild(h);
+            lastGroup = cat.group;
+        }
 
-async function handleFileUpload(input) {
-    const file = input.files[0];
-    if (!file) return null;
-    const formData = new FormData();
-    formData.append('image', file);
-    const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData
+        const btn = document.createElement('button');
+        btn.className = `w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 transition-all hover:bg-slate-700/50 ${selectedCategory === cat.id ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400'}`;
+        btn.innerHTML = `<span>${cat.icon}</span> <span class="font-bold text-sm">${cat.name}</span>`;
+        btn.onclick = () => selectCategory(cat.id);
+        list.appendChild(btn);
     });
-    const data = await res.json();
-    if (data.success) {
-        input.dataset.url = data.url;
-        // Show a small preview if possible
-        const preview = input.parentElement.querySelector('.img-preview');
-        if (preview) preview.src = data.url;
-        return data.url;
-    }
-    return null;
 }
 
-function renderForm() {
-    const type = gameTypeSelect.value;
-    dynamicFields.innerHTML = '';
+function selectCategory(id) {
+    selectedCategory = id;
+    tasks = [];
+    document.getElementById('blueprintTitle').value = '';
+    document.getElementById('editorPlaceholder').classList.add('hidden');
+    document.getElementById('editorContainer').classList.remove('hidden');
+    document.getElementById('selectedCategoryTitle').textContent = categories.find(c => c.id === id).name;
 
-    if (type === 'binary') {
-        dynamicFields.innerHTML = `
-            <div>
-                <label class="block text-sm font-medium text-slate-400 mb-1">Frage / Behauptung</label>
-                <input type="text" id="question" required placeholder="Ist das ein Bot?" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-400 mb-1">Emoji / Icon (optional)</label>
-                <input type="text" id="icon" placeholder="🤖" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4">
-            </div>
-        `;
-    } else if (type === 'choice' || type === 'select') {
-        dynamicFields.innerHTML = `
-            <div>
-                <label class="block text-sm font-medium text-slate-400 mb-1">Frage</label>
-                <input type="text" id="question" required placeholder="Worauf achtest du?" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4">
-            </div>
-            <div id="optionsContainer" class="space-y-2">
-                <label class="block text-sm font-medium text-slate-400 mb-1">Antwortmöglichkeiten</label>
-                <input type="text" class="option-input w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4" placeholder="Option 1">
-                <input type="text" class="option-input w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4" placeholder="Option 2">
-                <input type="text" class="option-input w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4" placeholder="Option 3">
-            </div>
-            <button type="button" onclick="addOptionField()" class="text-sm text-blue-400 hover:text-blue-300">+ Option hinzufügen</button>
-        `;
-    } else if (type === 'chat') {
-        dynamicFields.innerHTML = `
-            <div>
-                <label class="block text-sm font-medium text-slate-400 mb-1">Name des Gegenübers</label>
-                <input type="text" id="chatPartner" required placeholder="Unbekannt" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4">
-            </div>
-            <div id="chatNodes" class="space-y-4">
-                <h3 class="font-bold text-sm text-slate-300 mt-4">Dialog-Baum (JSON Format für Fortgeschrittene)</h3>
-                <textarea id="chatJson" class="w-full h-40 bg-slate-900 font-mono text-xs p-2 border border-slate-700" placeholder='{ "start": { "text": "Hallo!", "options": [ { "label": "Hi!", "next": "next" } ] } }'></textarea>
-                <p class="text-[10px] text-slate-500 italic">Hinweis: Standard-Struktur wird verwendet, wenn leer.</p>
-            </div>
-        `;
-    } else if (type === 'scroller') {
-        dynamicFields.innerHTML = `
-            <div id="postsContainer" class="space-y-4">
-                <label class="block text-sm font-medium text-slate-400 mb-1">Posts für den Feed</label>
-                <div class="post-entry p-4 bg-slate-900/50 rounded-lg border border-slate-700 space-y-2">
-                    <input type="text" class="post-user w-full bg-slate-700 p-2 text-sm rounded" placeholder="Benutzername">
-                    <textarea class="post-text w-full bg-slate-700 p-2 text-sm rounded" placeholder="Inhalt"></textarea>
-                    <label class="flex items-center gap-2 text-xs">
-                        <input type="checkbox" class="post-is-bad"> Ist Hassrede / Fake News?
-                    </label>
-                </div>
-            </div>
-            <button type="button" onclick="addPostField()" class="text-sm text-blue-400 hover:text-blue-300">+ Post hinzufügen</button>
-        `;
-    } else if (type === 'detector') {
-        dynamicFields.innerHTML = `
-            <div>
-                <label class="block text-sm font-medium text-slate-400 mb-1">Bild zum Untersuchen</label>
-                <input type="file" accept="image/*" onchange="handleFileUpload(this)" class="w-full text-sm text-slate-400">
-                <img class="img-preview h-20 mt-2 rounded border border-slate-700">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-400 mb-1">Anleitung</label>
-                <input type="text" id="question" value="Nutze die Lupe um Fehler zu finden." class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4">
-            </div>
-        `;
-    } else if (type === 'hotspot') {
-        dynamicFields.innerHTML = `
-            <div>
-                <label class="block text-sm font-medium text-slate-400 mb-1">Hintergrundbild</label>
-                <input type="file" id="hotspotImageInput" accept="image/*" onchange="handleHotspotImageLoad(this)" class="w-full text-sm text-slate-400">
-            </div>
-            <div id="hotspotEditor" class="relative bg-black w-full aspect-video mt-4 overflow-hidden cursor-crosshair hidden">
-                <img id="hotspotImgDisplay" class="w-full h-full object-contain pointer-events-none">
-                <div id="hotspotOverlay" class="absolute inset-0"></div>
-            </div>
-            <p class="text-[10px] text-slate-500 mt-1">Ziehe mit der Maus Rechtecke über die verdächtigen Stellen.</p>
-            <input type="hidden" id="hotspotData">
-            <button type="button" onclick="clearHotspots()" class="text-xs text-red-400 mt-2">Zonen löschen</button>
-        `;
-    } else if (type === 'password') {
-        dynamicFields.innerHTML = `
-            <div>
-                <label class="block text-sm font-medium text-slate-400 mb-1">Anforderungen (getrennt durch Komma)</label>
-                <input type="text" id="rules" placeholder="Sonderzeichen, Zahl, > 8 Zeichen" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-400 mb-1">Lösung (Optional)</label>
-                <input type="text" id="solution" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4">
-            </div>
-        `;
-    } else if (type === 'profile') {
-        dynamicFields.innerHTML = `
-            <div class="space-y-2">
-                <label class="block text-sm font-medium text-slate-400 mb-1">Felder im Profil</label>
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <label><input type="checkbox" checked value="name" class="profile-field"> Name</label>
-                    <label><input type="checkbox" checked value="age" class="profile-field"> Alter</label>
-                    <label><input type="checkbox" checked value="location" class="profile-field"> Wohnort</label>
-                    <label><input type="checkbox" checked value="hobbies" class="profile-field"> Hobbies</label>
-                    <label><input type="checkbox" checked value="photo" class="profile-field"> Profilbild</label>
-                    <label><input type="checkbox" checked value="email" class="profile-field"> E-Mail</label>
-                </div>
-                <div id="customProfileFields" class="space-y-1 mt-4">
-                     <input type="text" class="custom-profile-input w-full bg-slate-700 p-2 text-xs rounded" placeholder="Eigener Feldname (z.B. Schule)">
-                </div>
-                <button type="button" onclick="addCustomProfileField()" class="text-[10px] text-blue-400">+ Eigenes Feld</button>
-            </div>
-        `;
-    } else if (type === 'mood') {
-        dynamicFields.innerHTML = `
-            <div>
-                <label class="block text-sm font-medium text-slate-400 mb-1">Frage</label>
-                <input type="text" id="question" required placeholder="Wie fühlst du dich bei dieser Nachricht?" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4">
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="text-[10px] text-slate-500">Label Links</label>
-                    <input type="text" id="labelLeft" value="Ganz schlecht" class="w-full bg-slate-700 p-2 rounded">
-                </div>
-                <div>
-                    <label class="text-[10px] text-slate-500">Label Rechts</label>
-                    <input type="text" id="labelRight" value="Super gut" class="w-full bg-slate-700 p-2 rounded">
-                </div>
-            </div>
-        `;
-    } else if (type === 'bucket') {
-        dynamicFields.innerHTML = `
-            <div id="bucketsContainer" class="space-y-2">
-                <label class="block text-sm font-medium text-slate-400 mb-1">Kategorien (Buckets)</label>
-                <input type="text" class="bucket-name w-full bg-slate-700 p-2 rounded mb-2" placeholder="Korb Name (z.B. Privat)">
-                <input type="text" class="bucket-name w-full bg-slate-700 p-2 rounded mb-2" placeholder="Korb Name (z.B. Öffentlich)">
-            </div>
-            <button type="button" onclick="addBucketField()" class="text-xs text-blue-400">+ Korb hinzufügen (Max 4)</button>
-            <div id="bucketItems" class="mt-4 space-y-2">
-                <label class="block text-sm font-medium text-slate-400 mb-1">Begriffe / Items</label>
-                <div class="flex gap-2">
-                    <input type="text" class="item-text flex-1 bg-slate-700 p-2 rounded" placeholder="z.B. Telefonnummer">
-                    <input type="number" class="item-target w-16 bg-slate-700 p-2 rounded" placeholder="Korb #">
-                </div>
-            </div>
-            <button type="button" onclick="addBucketItem()" class="text-xs text-blue-400">+ Begriff hinzufügen</button>
-        `;
-    } else if (type === 'ranking') {
-        dynamicFields.innerHTML = `
-            <div>
-                <label class="block text-sm font-medium text-slate-400 mb-1">Elemente in der richtigen Reihenfolge (Oben = Platz 1)</label>
-                <div id="rankingContainer" class="space-y-2">
-                    <input type="text" class="ranking-item w-full bg-slate-700 p-2 rounded" placeholder="Element 1">
-                    <input type="text" class="ranking-item w-full bg-slate-700 p-2 rounded" placeholder="Element 2">
-                </div>
-                <button type="button" onclick="addRankingField()" class="text-xs text-blue-400 mt-2">+ Element hinzufügen</button>
-            </div>
-        `;
-    } else if (type === 'pairs') {
-        dynamicFields.innerHTML = `
-            <label class="block text-sm font-medium text-slate-400 mb-1">Paare (Links & Rechts)</label>
-            <div id="pairsContainer" class="space-y-2">
-                <div class="flex gap-2">
-                    <input type="text" class="pair-left flex-1 bg-slate-700 p-2 rounded" placeholder="Links">
-                    <input type="text" class="pair-right flex-1 bg-slate-700 p-2 rounded" placeholder="Rechts">
-                </div>
-            </div>
-            <button type="button" onclick="addPairField()" class="text-xs text-blue-400 mt-2">+ Paar hinzufügen</button>
-        `;
-    } else if (type === 'cloze') {
-        dynamicFields.innerHTML = `
-            <div>
-                <label class="block text-sm font-medium text-slate-400 mb-1">Text mit Lücken (Lücken als [WORT] schreiben)</label>
-                <textarea id="clozeText" class="w-full h-32 bg-slate-700 p-2 rounded" placeholder="Das [Internet] ist für viele [Neuland]."></textarea>
-            </div>
-        `;
-    } else if (type === 'countdown') {
-        dynamicFields.innerHTML = `
-            <div>
-                <label class="block text-sm font-medium text-slate-400 mb-1">Zeit in Sekunden</label>
-                <input type="number" id="duration" value="60" class="w-full bg-slate-700 p-2 rounded">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-400 mb-1">Aufgabentext</label>
-                <input type="text" id="question" placeholder="Stellt pantomimisch ein Passwort dar!" class="w-full bg-slate-700 p-2 rounded">
-            </div>
-        `;
-    } else if (type === 'photo' || type === 'statement') {
-        dynamicFields.innerHTML = `
-            <div>
-                <label class="block text-sm font-medium text-slate-400 mb-1">Anleitung / Aufgabe</label>
-                <input type="text" id="question" required placeholder="Mache ein Foto von..." class="w-full bg-slate-700 p-2 rounded">
-            </div>
-        `;
-    }
-
-    // Add event listeners for preview
-    dynamicFields.querySelectorAll('input, textarea, select').forEach(input => {
-        input.addEventListener('input', updatePreview);
-    });
+    renderCategories();
+    addTask();
     updatePreview();
 }
 
-function addOptionField() {
-    const container = document.getElementById('optionsContainer');
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'option-input w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4';
-    input.placeholder = `Option ${container.querySelectorAll('.option-input').length + 1}`;
-    input.addEventListener('input', updatePreview);
-    container.appendChild(input);
+function addTask() {
+    const task = { id: Date.now() + Math.random() };
+    tasks.push(task);
+    renderTasks();
 }
 
-function addPostField() {
-    const container = document.getElementById('postsContainer');
-    const div = document.createElement('div');
-    div.className = 'post-entry p-4 bg-slate-900/50 rounded-lg border border-slate-700 space-y-2';
-    div.innerHTML = `
-        <input type="text" class="post-user w-full bg-slate-700 p-2 text-sm rounded" placeholder="Benutzername">
-        <textarea class="post-text w-full bg-slate-700 p-2 text-sm rounded" placeholder="Inhalt"></textarea>
-        <label class="flex items-center gap-2 text-xs">
-            <input type="checkbox" class="post-is-bad"> Ist Hassrede / Fake News?
-        </label>
-    `;
-    div.querySelectorAll('input, textarea').forEach(i => i.addEventListener('input', updatePreview));
-    container.appendChild(div);
+function removeTask(index) {
+    tasks.splice(index, 1);
+    renderTasks();
+    updatePreview();
 }
 
-function addCustomProfileField() {
-    const container = document.getElementById('customProfileFields');
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'custom-profile-input w-full bg-slate-700 p-2 text-xs rounded';
-    input.placeholder = 'Eigener Feldname';
-    input.addEventListener('input', updatePreview);
-    container.appendChild(input);
-}
+function renderTasks() {
+    const list = document.getElementById('tasksList');
+    list.innerHTML = '';
 
-function addBucketField() {
-    const container = document.getElementById('bucketsContainer');
-    if (container.querySelectorAll('.bucket-name').length >= 4) return;
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'bucket-name w-full bg-slate-700 p-2 rounded mb-2';
-    input.placeholder = `Korb Name ${container.querySelectorAll('.bucket-name').length + 1}`;
-    input.addEventListener('input', updatePreview);
-    container.appendChild(input);
-}
-
-function addBucketItem() {
-    const container = document.getElementById('bucketItems');
-    const div = document.createElement('div');
-    div.className = 'flex gap-2';
-    div.innerHTML = `
-        <input type="text" class="item-text flex-1 bg-slate-700 p-2 rounded" placeholder="z.B. Passwort">
-        <input type="number" class="item-target w-16 bg-slate-700 p-2 rounded" placeholder="Korb #">
-    `;
-    div.querySelectorAll('input').forEach(i => i.addEventListener('input', updatePreview));
-    container.appendChild(div);
-}
-
-function addRankingField() {
-    const container = document.getElementById('rankingContainer');
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'ranking-item w-full bg-slate-700 p-2 rounded';
-    input.placeholder = `Element ${container.querySelectorAll('.ranking-item').length + 1}`;
-    input.addEventListener('input', updatePreview);
-    container.appendChild(input);
-}
-
-function addPairField() {
-    const container = document.getElementById('pairsContainer');
-    const div = document.createElement('div');
-    div.className = 'flex gap-2';
-    div.innerHTML = `
-        <input type="text" class="pair-left flex-1 bg-slate-700 p-2 rounded" placeholder="Links">
-        <input type="text" class="pair-right flex-1 bg-slate-700 p-2 rounded" placeholder="Rechts">
-    `;
-    div.querySelectorAll('input').forEach(i => i.addEventListener('input', updatePreview));
-    container.appendChild(div);
-}
-
-// Hotspot Logic
-let hotspots = [];
-function handleHotspotImageLoad(input) {
-    handleFileUpload(input).then(url => {
-        if (url) {
-            const editor = document.getElementById('hotspotEditor');
-            const img = document.getElementById('hotspotImgDisplay');
-            img.src = url;
-            editor.classList.remove('hidden');
-            initHotspotEditor();
-        }
+    tasks.forEach((task, index) => {
+        const div = document.createElement('div');
+        div.className = 'bg-slate-900/50 p-6 rounded-2xl border border-slate-700 space-y-4 relative group';
+        div.innerHTML = `
+            <div class="flex justify-between items-center mb-2">
+                <span class="bg-blue-600/20 text-blue-400 text-[10px] font-black px-2 py-1 rounded">AUFGABE ${index + 1}</span>
+                <button onclick="removeTask(${index})" class="text-slate-600 hover:text-red-500 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+            <div id="fields-${index}" class="space-y-4"></div>
+        `;
+        list.appendChild(div);
+        renderTaskFields(index);
     });
 }
 
-function initHotspotEditor() {
-    const overlay = document.getElementById('hotspotOverlay');
-    let startX, startY, isDrawing = false, currentRect = null;
+function renderTaskFields(idx) {
+    const container = document.getElementById(`fields-${idx}`);
+    const type = selectedCategory;
+    const task = tasks[idx];
+
+    // Generic Question Field
+    if (!['hotspot', 'scroller', 'ranking', 'pairs', 'cloze'].includes(type)) {
+        addField(container, 'Frage / Anweisung', 'text', 'question', idx, task.question || '');
+    }
+
+    if (type === 'binary') {
+        addField(container, 'Emoji / Icon', 'text', 'icon', idx, task.icon || '❓');
+    } else if (type === 'choice' || type === 'select') {
+        addOptionsArea(container, idx, task.options || ['', '', '']);
+    } else if (type === 'chat') {
+        addField(container, 'Chat-Partner', 'text', 'partner', idx, task.partner || 'Unbekannt');
+        addTextarea(container, 'Dialog-Struktur (JSON)', 'nodes', idx, JSON.stringify(task.nodes || {
+            "start": { "text": "Hallo!", "options": [{ "label": "Hi!", "next": "end" }] },
+            "end": { "text": "Schön dich zu sehen.", "options": [] }
+        }, null, 2));
+    } else if (type === 'scroller') {
+        addScrollerArea(container, idx, task.posts || []);
+    } else if (type === 'detector') {
+        addFileUpload(container, 'Hintergrundbild', 'image', idx, task.image);
+    } else if (type === 'hotspot') {
+        addHotspotEditor(container, idx, task.image, task.zones || []);
+    } else if (type === 'password') {
+        addField(container, 'Regeln (Komma getrennt)', 'text', 'rules', idx, (task.rules || []).join(', '));
+    } else if (type === 'profile') {
+        addProfileFieldsArea(container, idx, task.fields || [], task.customFields || []);
+    } else if (type === 'mood') {
+        addField(container, 'Label Links', 'text', 'labelLeft', idx, task.labelLeft || 'Schlecht');
+        addField(container, 'Label Rechts', 'text', 'labelRight', idx, task.labelRight || 'Gut');
+    } else if (type === 'bucket') {
+        addBucketArea(container, idx, task.buckets || [], task.items || []);
+    } else if (type === 'ranking') {
+        addRankingArea(container, idx, task.items || []);
+    } else if (type === 'pairs') {
+        addPairsArea(container, idx, task.pairs || []);
+    } else if (type === 'cloze') {
+        addTextarea(container, 'Text mit [Lücken]', 'text', idx, task.text || '');
+        addField(container, 'Falsche Wörter (Komma getrennt)', 'text', 'fakes', idx, (task.fakes || []).join(', '));
+    } else if (type === 'countdown') {
+        addField(container, 'Dauer (Sekunden)', 'number', 'duration', idx, task.duration || 60);
+    }
+
+    container.querySelectorAll('input, textarea').forEach(el => {
+        el.addEventListener('input', () => {
+            updateTaskData(idx);
+            updatePreview();
+        });
+    });
+}
+
+function addField(container, label, type, key, idx, val) {
+    const div = document.createElement('div');
+    div.innerHTML = `
+        <label class="block text-[10px] uppercase font-bold text-slate-500 mb-1 ml-1">${label}</label>
+        <input type="${type}" data-key="${key}" value="${val}" class="w-full bg-slate-800 border border-slate-700 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+    `;
+    container.appendChild(div);
+}
+
+function addTextarea(container, label, key, idx, val) {
+    const div = document.createElement('div');
+    div.innerHTML = `
+        <label class="block text-[10px] uppercase font-bold text-slate-500 mb-1 ml-1">${label}</label>
+        <textarea data-key="${key}" class="w-full h-32 bg-slate-800 border border-slate-700 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-blue-500 transition-all font-mono text-xs">${val}</textarea>
+    `;
+    container.appendChild(div);
+}
+
+function addFileUpload(container, label, key, idx, val) {
+    const div = document.createElement('div');
+    div.innerHTML = `
+        <label class="block text-[10px] uppercase font-bold text-slate-500 mb-1 ml-1">${label}</label>
+        <div class="flex items-center gap-4">
+            <input type="file" onchange="uploadImage(this, ${idx}, '${key}')" class="text-xs text-slate-500">
+            <img src="${val || ''}" class="img-preview h-12 w-12 object-cover rounded-lg border border-slate-700 ${val ? '' : 'hidden'}">
+        </div>
+        <input type="hidden" data-key="${key}" value="${val || ''}">
+    `;
+    container.appendChild(div);
+}
+
+async function uploadImage(input, idx, key) {
+    const file = input.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('image', file);
+    const res = await fetch('/api/upload', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.success) {
+        const hidden = input.parentElement.parentElement.querySelector(`input[data-key="${key}"]`);
+        hidden.value = data.url;
+        const img = input.parentElement.querySelector('img');
+        img.src = data.url;
+        img.classList.remove('hidden');
+        updateTaskData(idx);
+        updatePreview();
+    }
+}
+
+// Specialized Areas
+function addOptionsArea(container, idx, options) {
+    const div = document.createElement('div');
+    div.className = 'space-y-2';
+    div.innerHTML = `<label class="block text-[10px] uppercase font-bold text-slate-500 ml-1">Antworten</label>`;
+    options.forEach((opt, i) => {
+        const input = document.createElement('input');
+        input.className = 'option-input w-full bg-slate-800 border border-slate-700 rounded-xl py-2 px-4 outline-none text-sm mb-1';
+        input.value = opt;
+        input.placeholder = `Option ${i+1}`;
+        div.appendChild(input);
+    });
+    const addBtn = document.createElement('button');
+    addBtn.className = 'text-[10px] text-blue-400 font-bold ml-1';
+    addBtn.textContent = '+ OPTION';
+    addBtn.onclick = () => {
+        const input = document.createElement('input');
+        input.className = 'option-input w-full bg-slate-800 border border-slate-700 rounded-xl py-2 px-4 outline-none text-sm mb-1';
+        input.placeholder = 'Neue Option';
+        input.addEventListener('input', () => { updateTaskData(idx); updatePreview(); });
+        div.insertBefore(input, addBtn);
+    };
+    div.appendChild(addBtn);
+    container.appendChild(div);
+}
+
+function addScrollerArea(container, idx, posts) {
+    const div = document.createElement('div');
+    div.className = 'space-y-4';
+    div.innerHTML = `<label class="block text-[10px] uppercase font-bold text-slate-500 ml-1">Posts (Min. 10 empfohlen)</label>`;
+    const postsList = document.createElement('div');
+    postsList.className = 'posts-list space-y-2';
+
+    const renderPosts = () => {
+        postsList.innerHTML = '';
+        posts.forEach((p, i) => {
+            const pdiv = document.createElement('div');
+            pdiv.className = 'p-3 bg-slate-800 rounded-xl border border-slate-700 space-y-2';
+            pdiv.innerHTML = `
+                <input type="text" value="${p.user || ''}" class="post-user w-full bg-slate-900 border-none rounded p-1 text-xs" placeholder="User">
+                <textarea class="post-text w-full bg-slate-900 border-none rounded p-1 text-xs" placeholder="Inhalt">${p.text || ''}</textarea>
+                <label class="flex items-center gap-2 text-[10px] text-slate-400">
+                    <input type="checkbox" class="post-is-bad" ${p.isBad ? 'checked' : ''}> Fake News?
+                </label>
+            `;
+            pdiv.querySelectorAll('input, textarea').forEach(el => el.addEventListener('input', () => updateTaskData(idx)));
+            postsList.appendChild(pdiv);
+        });
+    };
+
+    const addBtn = document.createElement('button');
+    addBtn.className = 'w-full py-2 bg-slate-800 border border-slate-700 rounded-xl text-[10px] font-bold text-slate-400';
+    addBtn.textContent = '+ POST HINZUFÜGEN';
+    addBtn.onclick = () => { posts.push({ user: '', text: '', isBad: false }); renderPosts(); };
+
+    div.appendChild(postsList);
+    div.appendChild(addBtn);
+    container.appendChild(div);
+    renderPosts();
+}
+
+function addHotspotEditor(container, idx, image, zones) {
+    const div = document.createElement('div');
+    div.className = 'space-y-4';
+    div.innerHTML = `
+        <label class="block text-[10px] uppercase font-bold text-slate-500 ml-1">Hotspot Bild & Zonen</label>
+        <div class="flex items-center gap-4">
+            <input type="file" onchange="uploadHotspotImage(this, ${idx})" class="text-xs text-slate-500">
+        </div>
+        <div class="hotspot-editor-box relative w-full aspect-video bg-black rounded-xl overflow-hidden cursor-crosshair ${image ? '' : 'hidden'}">
+            <img src="${image || ''}" class="w-full h-full object-contain pointer-events-none">
+            <div class="hotspot-overlay absolute inset-0"></div>
+            <div class="hotspot-drag-box absolute border-2 border-blue-500 bg-blue-500/20 hidden pointer-events-none"></div>
+        </div>
+        <div class="flex justify-between items-center">
+            <span class="text-[10px] text-slate-500">${zones.length} Zonen definiert</span>
+            <button onclick="clearZones(${idx})" class="text-[10px] text-red-400 font-bold">LÖSCHEN</button>
+        </div>
+        <input type="hidden" data-key="image" value="${image || ''}">
+        <input type="hidden" data-key="zones" value='${JSON.stringify(zones)}'>
+    `;
+    container.appendChild(div);
+
+    if (image) initHotspotInteractions(div, idx);
+}
+
+async function uploadHotspotImage(input, idx) {
+    const file = input.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('image', file);
+    const res = await fetch('/api/upload', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.success) {
+        tasks[idx].image = data.url;
+        renderTasks();
+        updatePreview();
+    }
+}
+
+function initHotspotInteractions(container, idx) {
+    const overlay = container.querySelector('.hotspot-overlay');
+    const dragBox = container.querySelector('.hotspot-drag-box');
+    let startX, startY, isDrawing = false;
 
     overlay.onmousedown = (e) => {
         isDrawing = true;
@@ -337,214 +314,339 @@ function initHotspotEditor() {
         startX = ((e.clientX - rect.left) / rect.width) * 100;
         startY = ((e.clientY - rect.top) / rect.height) * 100;
 
-        currentRect = document.createElement('div');
-        currentRect.className = 'absolute border-2 border-red-500 bg-red-500/20';
-        currentRect.style.left = startX + '%';
-        currentRect.style.top = startY + '%';
-        overlay.appendChild(currentRect);
+        dragBox.classList.remove('hidden');
+        dragBox.style.left = startX + '%';
+        dragBox.style.top = startY + '%';
+        dragBox.style.width = '0%';
+        dragBox.style.height = '0%';
     };
 
-    window.onmousemove = (e) => {
+    window.addEventListener('mousemove', (e) => {
         if (!isDrawing) return;
         const rect = overlay.getBoundingClientRect();
         let currX = ((e.clientX - rect.left) / rect.width) * 100;
         let currY = ((e.clientY - rect.top) / rect.height) * 100;
 
-        currentRect.style.width = Math.abs(currX - startX) + '%';
-        currentRect.style.height = Math.abs(currY - startY) + '%';
-        currentRect.style.left = Math.min(currX, startX) + '%';
-        currentRect.style.top = Math.min(currY, startY) + '%';
-    };
+        dragBox.style.width = Math.abs(currX - startX) + '%';
+        dragBox.style.height = Math.abs(currY - startY) + '%';
+        dragBox.style.left = Math.min(currX, startX) + '%';
+        dragBox.style.top = Math.min(currY, startY) + '%';
+    });
 
-    window.onmouseup = (e) => {
+    window.addEventListener('mouseup', (e) => {
         if (!isDrawing) return;
         isDrawing = false;
         const rect = {
-            x: parseFloat(currentRect.style.left),
-            y: parseFloat(currentRect.style.top),
-            w: parseFloat(currentRect.style.width),
-            h: parseFloat(currentRect.style.height)
+            x: parseFloat(dragBox.style.left),
+            y: parseFloat(dragBox.style.top),
+            w: parseFloat(dragBox.style.width),
+            h: parseFloat(dragBox.style.height)
         };
         if (rect.w > 1 && rect.h > 1) {
-            hotspots.push(rect);
-            document.getElementById('hotspotData').value = JSON.stringify(hotspots);
+            if (!tasks[idx].zones) tasks[idx].zones = [];
+            tasks[idx].zones.push(rect);
+            renderTasks();
             updatePreview();
-        } else {
-            currentRect.remove();
         }
-    };
+        dragBox.classList.add('hidden');
+    }, { once: true });
+
+    // Draw existing zones
+    tasks[idx].zones?.forEach(z => {
+        const zdiv = document.createElement('div');
+        zdiv.className = 'absolute border-2 border-green-500 bg-green-500/10';
+        zdiv.style.left = z.x + '%';
+        zdiv.style.top = z.y + '%';
+        zdiv.style.width = z.w + '%';
+        zdiv.style.height = z.h + '%';
+        overlay.appendChild(zdiv);
+    });
 }
 
-function clearHotspots() {
-    hotspots = [];
-    document.getElementById('hotspotOverlay').innerHTML = '';
-    document.getElementById('hotspotData').value = '';
+function clearZones(idx) {
+    tasks[idx].zones = [];
+    renderTasks();
     updatePreview();
 }
 
-function updatePreview() {
-    const type = gameTypeSelect.value;
-    const question = document.getElementById('question')?.value || 'Deine Frage...';
+function addProfileFieldsArea(container, idx, fields, custom) {
+    const div = document.createElement('div');
+    div.className = 'space-y-2';
+    div.innerHTML = `
+        <label class="block text-[10px] uppercase font-bold text-slate-500 ml-1">Standard Felder</label>
+        <div class="grid grid-cols-2 gap-2">
+            ${['Name', 'Alter', 'Ort', 'Hobbies', 'E-Mail', 'Foto'].map(f => `
+                <label class="flex items-center gap-2 text-xs text-slate-400">
+                    <input type="checkbox" class="profile-field" value="${f.toLowerCase()}" ${fields.includes(f.toLowerCase()) ? 'checked' : ''}> ${f}
+                </label>
+            `).join('')}
+        </div>
+        <label class="block text-[10px] uppercase font-bold text-slate-500 ml-1 mt-4">Eigene Felder</label>
+        <div class="custom-fields-list space-y-1"></div>
+    `;
+    const list = div.querySelector('.custom-fields-list');
+    const renderCustom = () => {
+        list.innerHTML = '';
+        custom.forEach((f, i) => {
+            const input = document.createElement('input');
+            input.className = 'custom-profile-input w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs';
+            input.value = f;
+            input.addEventListener('input', () => updateTaskData(idx));
+            list.appendChild(input);
+        });
+    }
+    const addBtn = document.createElement('button');
+    addBtn.className = 'text-[10px] text-blue-400 font-bold ml-1';
+    addBtn.textContent = '+ FELD';
+    addBtn.onclick = () => { custom.push(''); renderCustom(); };
+    div.appendChild(addBtn);
+    container.appendChild(div);
+    renderCustom();
+}
 
-    previewContainer.innerHTML = '';
+function addBucketArea(container, idx, buckets, items) {
+    const div = document.createElement('div');
+    div.innerHTML = `
+        <label class="block text-[10px] uppercase font-bold text-slate-500 ml-1">Buckets (Max 4)</label>
+        <div class="buckets-list space-y-1 mb-4"></div>
+        <label class="block text-[10px] uppercase font-bold text-slate-500 ml-1">Items</label>
+        <div class="items-list space-y-1"></div>
+    `;
+    const bList = div.querySelector('.buckets-list');
+    const iList = div.querySelector('.items-list');
 
-    if (type === 'binary') {
-        const icon = document.getElementById('icon')?.value || '🖼️';
-        previewContainer.innerHTML = `
-            <div class="space-y-6">
-                <h2 class="text-2xl font-bold text-blue-400">Binary Swipe</h2>
-                <p class="text-slate-400">${question}</p>
-                <div class="w-64 h-80 mx-auto bg-slate-700 rounded-3xl border-4 border-slate-600 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden">
-                    <div class="text-7xl mb-4">${icon}</div>
-                    <div class="absolute bottom-0 left-0 right-0 p-4 bg-slate-800/80 border-t border-slate-600">
-                        <p class="font-bold text-sm text-blue-300">Echt oder Fake?</p>
-                    </div>
-                </div>
-            </div>
-        `;
-    } else if (type === 'choice') {
-        const options = Array.from(document.querySelectorAll('.option-input')).map(i => i.value).filter(v => v);
-        previewContainer.innerHTML = `
-            <div class="space-y-6">
-                <h2 class="text-2xl font-bold text-purple-400">Multiple Choice</h2>
-                <p class="text-slate-400">${question}</p>
-                <div class="grid grid-cols-1 gap-3">
-                    ${options.map((opt, i) => `
-                        <div class="bg-slate-700 p-4 rounded-xl border-2 border-slate-600 text-left">
-                            ${String.fromCharCode(65 + i)}) ${opt}
-                        </div>
-                    `).join('') || '<p class="text-slate-600">Noch keine Optionen...</p>'}
-                </div>
-            </div>
-        `;
-    } else if (type === 'select') {
-        const options = Array.from(document.querySelectorAll('.option-input')).map(i => i.value).filter(v => v);
-        previewContainer.innerHTML = `
-            <div class="space-y-6">
-                <h2 class="text-2xl font-bold text-yellow-400">Multiple Select</h2>
-                <p class="text-slate-400">${question}</p>
-                <div class="space-y-2 text-left">
-                    ${options.map(opt => `
-                        <div class="flex items-center gap-3 p-4 bg-slate-700 rounded-xl border border-slate-600">
-                            <div class="w-5 h-5 rounded border-slate-500 bg-slate-800"></div>
-                            <span>${opt}</span>
-                        </div>
-                    `).join('') || '<p class="text-slate-600">Noch keine Optionen...</p>'}
-                </div>
-                <button class="w-full bg-yellow-600 text-white font-bold py-3 px-4 rounded-xl">Absenden</button>
-            </div>
-        `;
-    } else {
-        previewContainer.innerHTML = `
-            <div class="p-8 border-2 border-dashed border-slate-700 rounded-2xl">
-                <p class="text-slate-500">Vorschau für <span class="uppercase font-bold">${type}</span> folgt in der Schüler-Ansicht.</p>
-            </div>
-        `;
+    const renderB = () => {
+        bList.innerHTML = '';
+        buckets.forEach((b, i) => {
+            const input = document.createElement('input');
+            input.className = 'bucket-name w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs';
+            input.value = b;
+            input.addEventListener('input', () => updateTaskData(idx));
+            bList.appendChild(input);
+        });
+    };
+    const renderI = () => {
+        iList.innerHTML = '';
+        items.forEach((it, i) => {
+            const idiv = document.createElement('div');
+            idiv.className = 'flex gap-2';
+            idiv.innerHTML = `
+                <input type="text" value="${it.text || ''}" class="item-text flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="Text">
+                <input type="number" value="${(it.target || 0) + 1}" class="item-target w-12 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="Korb">
+            `;
+            idiv.querySelectorAll('input').forEach(el => el.addEventListener('input', () => updateTaskData(idx)));
+            iList.appendChild(idiv);
+        });
+    };
+
+    const addBBtn = document.createElement('button');
+    addBBtn.className = 'text-[10px] text-blue-400 font-bold ml-1 mb-2';
+    addBBtn.textContent = '+ KORB';
+    addBBtn.onclick = () => { if (buckets.length < 4) buckets.push(''); renderB(); };
+
+    const addIBtn = document.createElement('button');
+    addIBtn.className = 'text-[10px] text-blue-400 font-bold ml-1';
+    addIBtn.textContent = '+ ITEM';
+    addIBtn.onclick = () => { items.push({ text: '', target: 0 }); renderI(); };
+
+    div.insertBefore(addBBtn, iList);
+    div.appendChild(addIBtn);
+    container.appendChild(div);
+    renderB(); renderI();
+}
+
+function addRankingArea(container, idx, items) {
+    const div = document.createElement('div');
+    div.innerHTML = `<label class="block text-[10px] uppercase font-bold text-slate-500 ml-1">Elemente (In richtiger Reihenfolge)</label>
+                     <div class="list space-y-1"></div>`;
+    const list = div.querySelector('.list');
+    const render = () => {
+        list.innerHTML = '';
+        items.forEach((it, i) => {
+            const input = document.createElement('input');
+            input.className = 'ranking-item w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs';
+            input.value = it;
+            input.addEventListener('input', () => updateTaskData(idx));
+            list.appendChild(input);
+        });
+    };
+    const addBtn = document.createElement('button');
+    addBtn.className = 'text-[10px] text-blue-400 font-bold ml-1';
+    addBtn.textContent = '+ ELEMENT';
+    addBtn.onclick = () => { items.push(''); render(); };
+    div.appendChild(addBtn);
+    container.appendChild(div);
+    render();
+}
+
+function addPairsArea(container, idx, pairs) {
+    const div = document.createElement('div');
+    div.innerHTML = `<label class="block text-[10px] uppercase font-bold text-slate-500 ml-1">Paare</label>
+                     <div class="list space-y-1"></div>`;
+    const list = div.querySelector('.list');
+    const render = () => {
+        list.innerHTML = '';
+        pairs.forEach((p, i) => {
+            const pdiv = document.createElement('div');
+            pdiv.className = 'flex gap-2';
+            pdiv.innerHTML = `
+                <input type="text" value="${p.left || ''}" class="pair-left flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="Links">
+                <input type="text" value="${p.right || ''}" class="pair-right flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="Rechts">
+            `;
+            pdiv.querySelectorAll('input').forEach(el => el.addEventListener('input', () => updateTaskData(idx)));
+            list.appendChild(pdiv);
+        });
+    };
+    const addBtn = document.createElement('button');
+    addBtn.className = 'text-[10px] text-blue-400 font-bold ml-1';
+    addBtn.textContent = '+ PAAR';
+    addBtn.onclick = () => { pairs.push({ left: '', right: '' }); render(); };
+    div.appendChild(addBtn);
+    container.appendChild(div);
+    render();
+}
+
+function updateTaskData(idx) {
+    const container = document.getElementById(`fields-${idx}`);
+    const task = tasks[idx];
+
+    // Scrape generic inputs
+    container.querySelectorAll('input[data-key], textarea[data-key]').forEach(input => {
+        const key = input.dataset.key;
+        let val = input.value;
+        if (key === 'rules' || key === 'fakes') val = val.split(',').map(s => s.trim());
+        if (key === 'nodes') { try { val = JSON.parse(val); } catch(e) {} }
+        if (key === 'zones') { try { val = JSON.parse(val); } catch(e) {} }
+        task[key] = val;
+    });
+
+    // Scrape specific areas
+    if (selectedCategory === 'choice' || selectedCategory === 'select') {
+        task.options = Array.from(container.querySelectorAll('.option-input')).map(i => i.value).filter(v => v);
+    } else if (selectedCategory === 'scroller') {
+        task.posts = Array.from(container.querySelectorAll('.posts-list > div')).map(pdiv => ({
+            user: pdiv.querySelector('.post-user').value,
+            text: pdiv.querySelector('.post-text').value,
+            isBad: pdiv.querySelector('.post-is-bad').checked
+        }));
+    } else if (selectedCategory === 'profile') {
+        task.fields = Array.from(container.querySelectorAll('.profile-field:checked')).map(i => i.value);
+        task.customFields = Array.from(container.querySelectorAll('.custom-profile-input')).map(i => i.value);
+    } else if (selectedCategory === 'bucket') {
+        task.buckets = Array.from(container.querySelectorAll('.bucket-name')).map(i => i.value);
+        task.items = Array.from(container.querySelectorAll('.items-list .flex')).map(idiv => ({
+            text: idiv.querySelector('.item-text').value,
+            target: parseInt(idiv.querySelector('.item-target').value) - 1
+        }));
+    } else if (selectedCategory === 'ranking') {
+        task.items = Array.from(container.querySelectorAll('.ranking-item')).map(i => i.value);
+    } else if (selectedCategory === 'pairs') {
+        task.pairs = Array.from(container.querySelectorAll('.flex')).map(pdiv => ({
+            left: pdiv.querySelector('.pair-left')?.value,
+            right: pdiv.querySelector('.pair-right')?.value
+        })).filter(p => p.left && p.right);
     }
 }
 
-blueprintForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const type = gameTypeSelect.value;
-    const title = document.getElementById('title').value;
-
-    let content = {};
-    if (['binary', 'choice', 'select', 'detector', 'mood', 'countdown', 'photo', 'statement'].includes(type)) {
-        content.question = document.getElementById('question')?.value;
+function updatePreview() {
+    const container = document.getElementById('previewContainer');
+    if (tasks.length === 0) {
+        container.innerHTML = '<p class="text-slate-500 italic">Keine Aufgaben in der Sequenz...</p>';
+        return;
     }
 
+    const task = tasks[0]; // Always preview first task
+    const type = selectedCategory;
+
+    container.innerHTML = `<div class="space-y-4">
+        <h3 class="text-2xl font-bold text-blue-400 mb-2">${categories.find(c => c.id === type).name}</h3>
+        <p class="text-xs text-slate-500 mb-6 italic">AUFGABE 1 VON ${tasks.length}</p>
+        <div class="preview-inner border border-slate-700 rounded-2xl p-4 bg-slate-900/50">
+            ${renderPreviewContent(type, task)}
+        </div>
+    </div>`;
+}
+
+function renderPreviewContent(type, task) {
     if (type === 'binary') {
-        content.icon = document.getElementById('icon').value;
-    } else if (type === 'choice' || type === 'select') {
-        content.options = Array.from(document.querySelectorAll('.option-input')).map(i => i.value).filter(v => v);
-    } else if (type === 'chat') {
-        content.partner = document.getElementById('chatPartner').value;
-        try {
-            content.nodes = JSON.parse(document.getElementById('chatJson').value || '{}');
-        } catch(e) { content.nodes = {}; }
-    } else if (type === 'scroller') {
-        content.posts = Array.from(document.querySelectorAll('.post-entry')).map(div => ({
-            user: div.querySelector('.post-user').value,
-            text: div.querySelector('.post-text').value,
-            isBad: div.querySelector('.post-is-bad').checked
-        }));
-    } else if (type === 'detector') {
-        content.image = document.querySelector('input[type="file"]').dataset.url;
-    } else if (type === 'hotspot') {
-        content.image = document.getElementById('hotspotImageInput').dataset.url;
-        content.zones = JSON.parse(document.getElementById('hotspotData').value || '[]');
-    } else if (type === 'password') {
-        content.rules = document.getElementById('rules').value.split(',').map(s => s.trim());
-        content.solution = document.getElementById('solution').value;
-    } else if (type === 'profile') {
-        content.fields = Array.from(document.querySelectorAll('.profile-field:checked')).map(i => i.value);
-        content.customFields = Array.from(document.querySelectorAll('.custom-profile-input')).map(i => i.value).filter(v => v);
-    } else if (type === 'mood') {
-        content.labelLeft = document.getElementById('labelLeft').value;
-        content.labelRight = document.getElementById('labelRight').value;
-    } else if (type === 'bucket') {
-        content.buckets = Array.from(document.querySelectorAll('.bucket-name')).map(i => i.value).filter(v => v);
-        content.items = Array.from(document.querySelectorAll('#bucketItems .flex')).map(div => ({
-            text: div.querySelector('.item-text').value,
-            target: parseInt(div.querySelector('.item-target').value) - 1
-        }));
-    } else if (type === 'ranking') {
-        content.items = Array.from(document.querySelectorAll('.ranking-item')).map(i => i.value).filter(v => v);
-    } else if (type === 'pairs') {
-        content.pairs = Array.from(document.querySelectorAll('#pairsContainer .flex')).map(div => ({
-            left: div.querySelector('.pair-left').value,
-            right: div.querySelector('.pair-right').value
-        }));
-    } else if (type === 'cloze') {
-        content.text = document.getElementById('clozeText').value;
-    } else if (type === 'countdown') {
-        content.duration = parseInt(document.getElementById('duration').value);
+        return `<div class="text-6xl mb-4">${task.icon || '❓'}</div><p class="text-sm">${task.question || 'Deine Frage...'}</p>`;
+    }
+    if (type === 'choice' || type === 'select') {
+        return `<p class="text-sm font-bold mb-4">${task.question || 'Deine Frage...'}</p>
+                <div class="space-y-2">${(task.options || []).map(o => `<div class="bg-slate-800 p-2 rounded text-xs text-left border border-slate-700">${o}</div>`).join('')}</div>`;
+    }
+    return `<p class="text-slate-500 text-xs italic">Vorschau für diesen Typ im Editor begrenzt. Speichere und starte eine Session zum Testen.</p>`;
+}
+
+async function saveBlueprint() {
+    const title = document.getElementById('blueprintTitle').value;
+    if (!title) return alert('Bitte gib einen Titel für den Blueprint ein.');
+    if (tasks.length === 0) return alert('Bitte füge mindestens eine Aufgabe hinzu.');
+
+    // Final data sync
+    tasks.forEach((_, i) => updateTaskData(i));
+
+    // Validation
+    if (selectedCategory === 'scroller') {
+        for (let i = 0; i < tasks.length; i++) {
+            if ((tasks[i].posts || []).length < 10) {
+                return alert(`Aufgabe ${i+1}: Bitte erstelle mindestens 10 Posts für den Scroller, damit er flüssig scrollt.`);
+            }
+        }
     }
 
     const res = await fetch('/api/blueprints', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, gameType: type, content })
+        body: JSON.stringify({
+            title,
+            gameType: selectedCategory,
+            content: { tasks: tasks }
+        })
     });
 
     if (res.ok) {
-        alert('Blueprint gespeichert!');
-        blueprintForm.reset();
-        hotspots = [];
-        renderForm();
+        alert('Blueprint erfolgreich gespeichert!', 'Gespeichert', '✅');
         loadBlueprints();
+        // Reset
+        document.getElementById('editorContainer').classList.add('hidden');
+        document.getElementById('editorPlaceholder').classList.remove('hidden');
+        selectedCategory = null;
+        renderCategories();
     } else {
-        alert('Fehler beim Speichern');
+        alert('Fehler beim Speichern.');
     }
-});
+}
 
 async function loadBlueprints() {
     const res = await fetch('/api/blueprints');
     const data = await res.json();
+    blueprints = data.blueprints;
+
     const list = document.getElementById('blueprintList');
     list.innerHTML = '';
 
-    data.blueprints.forEach(bp => {
-        const item = document.createElement('div');
-        item.className = 'bg-slate-700 p-3 rounded-lg flex justify-between items-center group hover:bg-slate-650 transition-colors';
-        item.innerHTML = `
+    blueprints.forEach(bp => {
+        const div = document.createElement('div');
+        div.className = 'p-3 bg-slate-700/50 rounded-xl flex justify-between items-center group hover:bg-slate-700 transition-all';
+        div.innerHTML = `
             <div>
-                <p class="font-bold text-sm">${bp.title}</p>
-                <p class="text-xs text-slate-400 uppercase tracking-tighter">${bp.game_type}</p>
+                <p class="font-bold text-xs">${bp.title}</p>
+                <p class="text-[9px] text-slate-500 uppercase">${bp.game_type} • ${bp.content.tasks.length} AUFGABEN</p>
             </div>
-            <button onclick="deleteBlueprint(${bp.id})" class="text-slate-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
+            <button onclick="deleteBlueprint(${bp.id})" class="text-slate-500 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
                 &times;
             </button>
         `;
-        list.appendChild(item);
+        list.appendChild(div);
     });
 }
 
 async function deleteBlueprint(id) {
-    if (!confirm('Diesen Blueprint wirklich löschen?')) return;
+    if (!await confirm('Diesen Blueprint wirklich löschen?')) return;
     const res = await fetch(`/api/blueprints/${id}`, { method: 'DELETE' });
     if (res.ok) loadBlueprints();
 }
 
 checkAuth();
-renderForm();
+renderCategories();

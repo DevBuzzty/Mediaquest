@@ -68,134 +68,158 @@ async function ensureDefaultBlueprints(teacherId) {
 
     const examples = [
         {
-            title: "Echt oder Fake? (Swipe)",
+            title: "News-Check",
             game_type: "binary",
-            content: { question: "Ist dieses Foto von einem fliegenden Hund echt?", icon: "🐕" }
+            tasks: [
+                { question: "Ist diese Schlagzeile echt?", icon: "🗞️" },
+                { question: "Wurde dieses Foto manipuliert?", icon: "🖼️" }
+            ]
         },
         {
-            title: "Impressum-Check (Quiz)",
+            title: "Sicherheit-Quiz",
             game_type: "choice",
-            content: {
-                question: "Woran erkennst du eine seriöse Website am schnellsten?",
-                options: ["A) An den bunten Bildern", "B) An einem vollständigen Impressum", "C) Daran, dass sie oben in der Suche steht"]
-            }
+            tasks: [
+                { question: "Was ist Phishing?", options: ["Ein Spiel", "Daten-Diebstahl", "Hardware-Fehler"] },
+                { question: "USB-Sticks von Fremden...", options: ["Nutzbar", "Gefährlich", "Immer gut"] }
+            ]
         },
         {
-            title: "Sicheres Passwort",
-            game_type: "password",
-            content: { rules: ["Mindestens 8 Zeichen", "Enthält ein !", "Enthält eine Zahl"], solution: "" }
-        },
-        {
-            title: "Daten-Detektiv (Kategorien)",
-            game_type: "bucket",
-            content: {
-                buckets: ["Privat", "Öffentlich"],
-                items: [
-                    { text: "Meine Telefonnummer", target: 0 },
-                    { text: "Meine Lieblingsfarbe", target: 1 },
-                    { text: "Mein Passwort", target: 0 },
-                    { text: "Mein Vorname", target: 1 }
-                ]
-            }
-        },
-        {
-            title: "Chat mit Unbekannt",
-            game_type: "chat",
-            content: {
-                partner: "ZockerPro_07",
-                nodes: {
-                    "start": { "text": "Hey! Ich hab gesehen du spielst auch Roblox. Willst du meine Robux haben?", "options": [{ "label": "Klar, gerne!", "next": "yes" }, { "label": "Wer bist du überhaupt?", "next": "who" }] },
-                    "yes": { "text": "Ok, gib mir einfach kurz dein Passwort, dann lad ich sie dir auf das Konto.", "options": [{ "label": "Hier hast du es...", "next": "scam" }, { "label": "Niemals!", "next": "safe" }] },
-                    "who": { "text": "Ich bin auch aus deiner Schule. Vertrau mir einfach.", "options": [{ "label": "Ok...", "next": "yes" }] },
-                    "scam": { "text": "Danke! (Dein Account wurde soeben gehackt)", "options": [] },
-                    "safe": { "text": "Gute Entscheidung! Gib niemals dein Passwort weiter.", "options": [] }
-                }
-            }
-        },
-        {
-            title: "Social Media Feed",
-            game_type: "scroller",
-            content: {
-                posts: [
-                    { user: "WahrheitsFinder", text: "Wusstet ihr, dass Zitronen gegen Computer-Viren helfen? 🍋", isBad: true },
-                    { user: "SportFreak", text: "Heute 5km gelaufen! 🏃‍♂️", isBad: false },
-                    { user: "Anonymus", text: "Alle Schüler aus der 4b sind total doof!", isBad: true }
-                ]
-            }
-        },
-        {
-            title: "Phishing-Mail Hotspots",
-            game_type: "hotspot",
-            content: {
-                image: "https://via.placeholder.com/800x400?text=Phishing+E-Mail+Beispiel",
-                zones: [{ x: 10, y: 10, w: 30, h: 10 }, { x: 50, y: 70, w: 20, h: 15 }]
-            }
-        },
-        {
-            title: "Passwort-Ranking",
-            game_type: "ranking",
-            content: { items: ["123456", "Passwort123", "S1cheres!Pw_2024"] }
-        },
-        {
-            title: "Lückentext Quellen",
-            game_type: "cloze",
-            content: { text: "Bevor ich eine Nachricht teile, prüfe ich die [Quelle]. Ich schaue ins [Impressum] und suche nach anderen [Webseiten], die das Gleiche berichten." }
-        },
-        {
-            title: "Begriffe zuordnen",
-            game_type: "pairs",
-            content: {
-                pairs: [
-                    { left: "Cookie", right: "Speichert Daten" },
-                    { left: "Verschlüsselung", right: "Schützt Nachrichten" },
-                    { left: "Hacker", right: "Sucht Sicherheitslücken" }
-                ]
-            }
-        },
-        {
-            title: "Foto-Aufgabe",
-            game_type: "photo",
-            content: { question: "Mache ein Foto von einem QR-Code im Klassenzimmer." }
-        },
-        {
-            title: "Mein Statement",
-            game_type: "statement",
-            content: { question: "Was ist für dich das Wichtigste im Internet?" }
-        },
-        {
-            title: "Gaming-Profil",
-            game_type: "profile",
-            content: { fields: ["name", "hobbies", "photo"], customFields: ["Lieblingsspiel"] }
-        },
-        {
-            title: "Gefühls-Check",
-            game_type: "mood",
-            content: { question: "Wie fühlst du dich, wenn jemand ein peinliches Foto von dir postet?", labelLeft: "Sehr traurig", labelRight: "Egal" }
-        },
-        {
-            title: "Blitz-Recherche",
-            game_type: "countdown",
-            content: { duration: 30, question: "Findet im Team 3 Merkmale für Fake News!" }
-        },
-        {
-            title: "Bildfehler finden",
-            game_type: "detector",
-            content: { question: "Finde die KI-Fehler im Bild.", image: "https://via.placeholder.com/800x400?text=KI+Generiertes+Bild" }
-        },
-        {
-            title: "Datenschutz-Wahl",
+            title: "Apps-Berechtigungen",
             game_type: "select",
-            content: { question: "Welche dieser Daten sind besonders schützenswert?", options: ["Wohnort", "Telefonnummer", "Lieblingsfarbe", "E-Mail-Adresse"] }
+            tasks: [
+                { question: "Was braucht eine Taschenlampe?", options: ["Kamera/Blitz", "Kontakte", "GPS-Standort", "Mikrofon"] }
+            ]
+        },
+        {
+            title: "Sicherer Chat",
+            game_type: "chat",
+            tasks: [
+                {
+                    partner: "Anonym",
+                    nodes: {
+                        "start": { "text": "Hi, schickst du mir ein Foto von dir?", "options": [{ "label": "Klar!", "next": "bad" }, { "label": "Nein.", "next": "good" }] },
+                        "bad": { "text": "Vorsicht! Schicke niemals Fotos an Unbekannte.", "options": [] },
+                        "good": { "text": "Gute Entscheidung!", "options": [] }
+                    }
+                }
+            ]
+        },
+        {
+            title: "Social Feed",
+            game_type: "scroller",
+            tasks: [
+                {
+                    posts: [
+                        { user: "FakeNews", text: "Gummibärchen-Regen morgen!", isBad: true },
+                        { user: "News", text: "Schule fällt morgen aus.", isBad: true },
+                        { user: "User", text: "Schönen Tag!", isBad: false },
+                        { user: "Bot", text: "Klick hier für 1 Million!", isBad: true },
+                        { user: "Chef", text: "Neues Rezept online.", isBad: false },
+                        { user: "Hater", text: "Du bist doof!", isBad: true },
+                        { user: "Freund", text: "Kommst du spielen?", isBad: false },
+                        { user: "Spam", text: "Kaufe jetzt!", isBad: true },
+                        { user: "Lokal", text: "Katze gerettet.", isBad: false },
+                        { user: "Wetter", text: "Sonne pur.", isBad: false }
+                    ]
+                }
+            ]
+        },
+        {
+            title: "KI-Fehler Suche",
+            game_type: "detector",
+            tasks: [
+                { question: "Finde Details im KI-Bild.", image: "https://via.placeholder.com/800x600?text=KI+Bild+Beispiel" }
+            ]
+        },
+        {
+            title: "Spuren im Netz",
+            game_type: "hotspot",
+            tasks: [
+                {
+                    image: "https://via.placeholder.com/800x600?text=Webseite+Beispiel",
+                    zones: [{ x: 10, y: 10, w: 20, h: 10 }]
+                }
+            ]
+        },
+        {
+            title: "Tresor-Training",
+            game_type: "password",
+            tasks: [
+                { rules: ["10 Zeichen", "1 Sonderzeichen"], solution: "" }
+            ]
+        },
+        {
+            title: "Foto-Mission",
+            game_type: "photo",
+            tasks: [
+                { question: "Fotografiere ein Warnschild." }
+            ]
+        },
+        {
+            title: "Deine Meinung",
+            game_type: "statement",
+            tasks: [
+                { question: "Was bedeutet Freiheit im Netz?" }
+            ]
+        },
+        {
+            title: "Mein Online-Profil",
+            game_type: "profile",
+            tasks: [
+                { fields: ["name", "ort"], customFields: ["Hobby"] }
+            ]
+        },
+        {
+            title: "Stimmungs-Check",
+            game_type: "mood",
+            tasks: [
+                { question: "Cybermobbing ist...", labelLeft: "Schlimm", labelRight: "Egal" }
+            ]
+        },
+        {
+            title: "Daten-Sortierung",
+            game_type: "bucket",
+            tasks: [
+                { buckets: ["Sicher", "Riskanter"], items: [{ text: "Spitzname", target: 0 }, { text: "Passwort", target: 1 }] }
+            ]
+        },
+        {
+            title: "Wichtigkeit",
+            game_type: "ranking",
+            tasks: [
+                { items: ["Privatsphäre", "Spaß", "Sicherheit"] }
+            ]
+        },
+        {
+            title: "Zuordnung",
+            game_type: "pairs",
+            tasks: [
+                { pairs: [{ left: "Browser", right: "Internet" }, { left: "Passwort", right: "Schloss" }] }
+            ]
+        },
+        {
+            title: "Regeln",
+            game_type: "cloze",
+            tasks: [
+                { text: "Ich bin [vorsichtig] im Netz.", fakes: ["dumm", "laut"] }
+            ]
+        },
+        {
+            title: "Recherche-Zeit",
+            game_type: "countdown",
+            tasks: [
+                { duration: 15, question: "Schnell! Wer hat das Internet erfunden?" }
+            ]
         }
     ];
 
     for (const ex of examples) {
         await dbAsync.run(
             'INSERT INTO blueprints (teacher_id, title, game_type, content, created_at) VALUES (?, ?, ?, ?, ?)',
-            [teacherId, ex.title, ex.game_type, JSON.stringify(ex.content), new Date().toISOString()]
+            [teacherId, ex.title, ex.game_type, JSON.stringify({ tasks: ex.tasks }), new Date().toISOString()]
         );
     }
-    console.log(`Examples seeded for teacher ${teacherId}`);
+    console.log(`Examples (V3) seeded for teacher ${teacherId}`);
 }
 
 ensureDefaultAccounts();

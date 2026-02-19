@@ -8,6 +8,7 @@ let currentTeamId = null;
 let currentGameStatus = 'waiting';
 let currentGameType = 'binary';
 let currentBlueprint = null;
+let currentTaskIndex = 0;
 let takenColors = [];
 
 const socket = io();
@@ -70,159 +71,181 @@ function displayTeamSummary(name, color, size, code, isRejoin = false) {
     summary.appendChild(sizeP);
 }
 
-// Mini-Games Rendering
-function renderGame(mode, blueprint = null) {
+// Sequence Engine
+function initGameSequence(blueprint, mode) {
+    currentBlueprint = blueprint;
     currentGameType = mode;
+    currentTaskIndex = 0;
+    renderNextTask();
+}
+
+async function renderNextTask() {
+    const tasks = currentBlueprint?.tasks || [];
+    if (currentTaskIndex >= tasks.length && tasks.length > 0) {
+        await WeltenretterUI.alert('Du hast alle Aufgaben dieser Sequenz gelöst!', 'Super!', '🏆');
+        document.getElementById('waitingPhase').classList.remove('hidden');
+        document.getElementById('gamePhase').classList.add('hidden');
+        return;
+    }
+
+    const task = tasks[currentTaskIndex] || {};
+    renderGame(currentGameType, task, tasks.length);
+}
+
+function completeTask() {
+    currentTaskIndex++;
+    renderNextTask();
+}
+
+// Mini-Games Rendering
+function renderGame(mode, task, totalTasks) {
     const container = document.getElementById('gameContent');
     container.style.opacity = '0';
 
-    const question = blueprint?.question || '';
-
     setTimeout(() => {
         container.innerHTML = '';
+
+        // Progress Header
+        if (totalTasks > 1) {
+            const progress = document.createElement('div');
+            progress.className = 'mb-6 space-y-1';
+            progress.innerHTML = `
+                <div class="flex justify-between text-[10px] font-black text-slate-500 uppercase">
+                    <span>Aufgabe ${currentTaskIndex + 1} von ${totalTasks}</span>
+                    <span>${Math.round(((currentTaskIndex + 1) / totalTasks) * 100)}%</span>
+                </div>
+                <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                    <div class="h-full bg-blue-500 transition-all duration-500" style="width: ${((currentTaskIndex + 1) / totalTasks) * 100}%"></div>
+                </div>
+            `;
+            container.appendChild(progress);
+        }
+
+        const gameArea = document.createElement('div');
+        gameArea.id = 'gameArea';
+        container.appendChild(gameArea);
+
         if (mode === 'binary') {
-            const icon = blueprint?.icon || '🖼️';
-            container.innerHTML = `
-                <div class="space-y-6 animate-bounce-in">
-                    <h2 class="text-2xl font-bold text-blue-400">Binary Swipe</h2>
-                    <p class="text-slate-400">${question || 'Ist dieses Bild echt oder ein Fake?'}</p>
-                    <div id="swipeCard" class="swipe-card w-64 h-80 mx-auto bg-slate-700 rounded-3xl border-4 border-slate-600 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden">
-                        <div class="text-7xl mb-4">${icon}</div>
-                        <div class="absolute bottom-0 left-0 right-0 p-4 bg-slate-800/80 border-t border-slate-600">
-                            <p class="font-bold text-sm text-blue-300">Echt oder Fake?</p>
-                            <p class="text-xs text-slate-400">Wische nach links oder rechts</p>
-                        </div>
-                    </div>
-                    <div class="flex justify-center gap-8 pt-4">
-                        <button onclick="handleSwipe('left')" class="w-16 h-16 bg-red-600 hover:bg-red-500 rounded-full flex items-center justify-center shadow-lg transform active:scale-90 transition-all">
-                            <span class="text-2xl">❌</span>
-                        </button>
-                        <button onclick="handleSwipe('right')" class="w-16 h-16 bg-green-600 hover:bg-green-500 rounded-full flex items-center justify-center shadow-lg transform active:scale-90 transition-all">
-                            <span class="text-2xl">✅</span>
-                        </button>
-                    </div>
-                </div>
-            `;
-            initSwipe();
+            renderBinary(task, gameArea);
         } else if (mode === 'choice') {
-            const options = blueprint?.options || ['A', 'B', 'C'];
-            container.innerHTML = `
-                <div class="space-y-6 animate-bounce-in">
-                    <h2 class="text-2xl font-bold text-purple-400">Multiple Choice</h2>
-                    <p class="text-slate-400">${question || 'Wähle die richtige Antwort'}</p>
-                    <div class="grid grid-cols-1 gap-3">
-                        ${options.map((opt, i) => `
-                            <button onclick="selectChoice(${i})" class="choice-btn w-full bg-slate-700 hover:bg-slate-600 p-4 rounded-xl border-2 border-slate-600 text-left transition-all">
-                                ${opt.includes(')') ? opt : String.fromCharCode(65+i) + ') ' + opt}
-                            </button>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
+            renderChoice(task, gameArea);
         } else if (mode === 'select') {
-            const options = blueprint?.options || ['Opt 1', 'Opt 2'];
-            container.innerHTML = `
-                <div class="space-y-6 animate-bounce-in">
-                    <h2 class="text-2xl font-bold text-yellow-400">Multiple Select</h2>
-                    <p class="text-slate-400">${question || 'Markiere alle richtigen Antworten'}</p>
-                    <div class="space-y-2 text-left">
-                        ${options.map(opt => `
-                            <label class="flex items-center gap-3 p-4 bg-slate-700 rounded-xl cursor-pointer hover:bg-slate-650 transition-colors border border-slate-600">
-                                <input type="checkbox" class="w-5 h-5 rounded border-slate-500 bg-slate-800 text-blue-500 focus:ring-blue-500">
-                                <span>${opt}</span>
-                            </label>
-                        `).join('')}
-                    </div>
-                    <button onclick="submitSelect()" class="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg active:scale-95">Absenden</button>
-                </div>
-            `;
+            renderSelect(task, gameArea);
         } else if (mode === 'chat') {
-            renderChat(blueprint);
+            renderChat(task, gameArea);
         } else if (mode === 'scroller') {
-            renderScroller(blueprint);
+            renderScroller(task, gameArea);
         } else if (mode === 'detector') {
-            renderDetector(blueprint);
+            renderDetector(task, gameArea);
         } else if (mode === 'hotspot') {
-            renderHotspot(blueprint);
+            renderHotspot(task, gameArea);
         } else if (mode === 'password') {
-            renderPassword(blueprint);
+            renderPassword(task, gameArea);
         } else if (mode === 'profile') {
-            renderProfile(blueprint);
+            renderProfile(task, gameArea);
         } else if (mode === 'mood') {
-            renderMood(blueprint);
+            renderMood(task, gameArea);
         } else if (mode === 'bucket') {
-            renderBucket(blueprint);
+            renderBucket(task, gameArea);
         } else if (mode === 'ranking') {
-            renderRanking(blueprint);
+            renderRanking(task, gameArea);
         } else if (mode === 'pairs') {
-            renderPairs(blueprint);
+            renderPairs(task, gameArea);
         } else if (mode === 'cloze') {
-            renderCloze(blueprint);
+            renderCloze(task, gameArea);
         } else if (mode === 'countdown') {
-            renderCountdown(blueprint);
+            renderCountdown(task, gameArea);
         } else if (mode === 'photo' || mode === 'statement') {
-            renderCapture(mode, blueprint);
+            renderCapture(mode, task, gameArea);
         }
         container.style.opacity = '1';
     }, 300);
+}
+
+// Game Types
+function renderBinary(task, container) {
+    container.innerHTML = `
+        <div class="space-y-6 animate-bounce-in">
+            <h2 class="text-2xl font-black text-blue-500 uppercase tracking-tighter">Binary Swipe</h2>
+            <p class="text-slate-400 font-bold">${task.question || 'Echt oder Fake?'}</p>
+            <div id="swipeCard" class="swipe-card w-64 h-80 mx-auto bg-slate-800 rounded-[3rem] border-4 border-slate-700 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden">
+                <div class="text-8xl mb-4 transform transition-transform hover:scale-110">${task.icon || '🖼️'}</div>
+                <div class="absolute bottom-0 left-0 right-0 p-6 bg-slate-900/90 border-t border-slate-700">
+                    <p class="text-xs text-slate-500 uppercase font-black tracking-widest">Entscheide jetzt</p>
+                </div>
+            </div>
+            <div class="flex justify-center gap-8 pt-4">
+                <button onclick="handleSwipe('left')" class="w-16 h-16 bg-red-600 hover:bg-red-500 rounded-full flex items-center justify-center shadow-lg transform active:scale-90 transition-all border-4 border-red-900/50">
+                    <span class="text-2xl">❌</span>
+                </button>
+                <button onclick="handleSwipe('right')" class="w-16 h-16 bg-green-600 hover:bg-green-500 rounded-full flex items-center justify-center shadow-lg transform active:scale-90 transition-all border-4 border-green-900/50">
+                    <span class="text-2xl">✅</span>
+                </button>
+            </div>
+        </div>
+    `;
+    initSwipe();
 }
 
 function handleSwipe(dir) {
     const card = document.getElementById('swipeCard');
     if (!card) return;
     card.classList.add(dir === 'left' ? 'swipe-left' : 'swipe-right');
-    setTimeout(() => {
-        renderGame('binary'); // Reset for demo
-    }, 600);
+    setTimeout(completeTask, 600);
 }
 
-function initSwipe() {
-    const card = document.getElementById('swipeCard');
-    if (!card) return;
-    let startX = 0;
-
-    card.addEventListener('touchstart', e => startX = e.touches[0].clientX);
-    card.addEventListener('touchend', e => {
-        const diff = e.changedTouches[0].clientX - startX;
-        if (Math.abs(diff) > 100) handleSwipe(diff > 0 ? 'right' : 'left');
-    });
-
-    // Mouse fallback
-    let isDown = false;
-    card.addEventListener('mousedown', e => { isDown = true; startX = e.clientX; });
-    window.addEventListener('mouseup', e => {
-        if (!isDown) return;
-        isDown = false;
-        const diff = e.clientX - startX;
-        if (Math.abs(diff) > 100) handleSwipe(diff > 0 ? 'right' : 'left');
-    });
+function renderChoice(task, container) {
+    const options = task.options || ['A', 'B', 'C'];
+    container.innerHTML = `
+        <div class="space-y-6 animate-bounce-in">
+            <h2 class="text-2xl font-black text-purple-500 uppercase tracking-tighter">Quiz</h2>
+            <p class="text-slate-200 text-lg font-bold">${task.question || 'Wähle die richtige Antwort'}</p>
+            <div class="grid grid-cols-1 gap-3">
+                ${options.map((opt, i) => `
+                    <button onclick="selectChoice(${i})" class="choice-btn w-full bg-slate-800 hover:bg-slate-700 p-4 rounded-2xl border-2 border-slate-700 text-left transition-all font-bold text-slate-300">
+                        ${opt.includes(')') ? opt : String.fromCharCode(65+i) + ') ' + opt}
+                    </button>
+                `).join('')}
+            </div>
+        </div>
+    `;
 }
 
-function selectChoice(index) {
+async function selectChoice(index) {
     const btns = document.querySelectorAll('.choice-btn');
-    btns.forEach((b, i) => {
-        if (i === index) {
-            b.classList.add('bg-blue-600', 'border-blue-400', 'scale-105');
-            b.classList.remove('bg-slate-700', 'border-slate-600');
-        } else {
-            b.classList.remove('bg-blue-600', 'border-blue-400', 'scale-105');
-            b.classList.add('bg-slate-700', 'border-slate-600');
-        }
-    });
-    setTimeout(() => alert('Antwort gewählt!'), 300);
+    btns[index].classList.add('bg-blue-600', 'border-blue-400', 'text-white', 'scale-[1.02]');
+    await WeltenretterUI.alert('Antwort gespeichert!', 'Vielen Dank', '✨');
+    completeTask();
 }
 
-function submitSelect() {
-    alert('Vielen Dank! Deine Antworten wurden übermittelt.');
+function renderSelect(task, container) {
+    const options = task.options || ['Opt 1', 'Opt 2'];
+    container.innerHTML = `
+        <div class="space-y-6 animate-bounce-in">
+            <h2 class="text-2xl font-black text-yellow-500 uppercase tracking-tighter">Checklist</h2>
+            <p class="text-slate-200 text-lg font-bold">${task.question || 'Markiere alle richtigen Antworten'}</p>
+            <div class="space-y-2 text-left">
+                ${options.map(opt => `
+                    <label class="flex items-center gap-4 p-4 bg-slate-800 rounded-2xl cursor-pointer hover:bg-slate-700 transition-all border border-slate-700">
+                        <input type="checkbox" class="w-6 h-6 rounded-lg border-slate-600 bg-slate-900 text-yellow-500 focus:ring-yellow-500">
+                        <span class="font-bold text-slate-300">${opt}</span>
+                    </label>
+                `).join('')}
+            </div>
+            <button onclick="submitSelect()" class="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-black py-4 rounded-2xl transition-all shadow-xl active:scale-95">ABSENDEN</button>
+        </div>
+    `;
 }
 
-// Chat Simulator
-function renderChat(blueprint) {
-    const container = document.getElementById('gameContent');
-    const nodes = blueprint?.nodes || {
-        "start": { "text": "Hey, hast du schon gehört? Die Mathearbeit wurde verschoben!", "options": [ { "label": "Echt? Cool!", "next": "cool" }, { "label": "Glaub ich nicht.", "next": "fake" } ] },
-        "cool": { "text": "Ja, voll gut oder? Schreibst du mir wenn du mehr weißt?", "options": [] },
-        "fake": { "text": "Stimmt, war nur ein Scherz um zu sehen ob du alles glaubst.", "options": [] }
+async function submitSelect() {
+    await WeltenretterUI.alert('Deine Auswahl wurde übermittelt.', 'Erfolgreich', '✅');
+    completeTask();
+}
+
+function renderChat(task, container) {
+    const nodes = task.nodes || {
+        "start": { "text": "Hallo!", "options": [{ "label": "Hi!", "next": "end" }] },
+        "end": { "text": "Bis bald.", "options": [] }
     };
 
     let currentNode = "start";
@@ -230,19 +253,21 @@ function renderChat(blueprint) {
         const node = nodes[nodeId] || nodes["start"];
         container.innerHTML = `
             <div class="space-y-6 animate-bounce-in">
-                <h2 class="text-2xl font-bold text-blue-400">Chat mit ${blueprint?.partner || 'Unbekannt'}</h2>
-                <div class="bg-slate-900/50 p-4 rounded-2xl border border-slate-700 min-h-[100px] flex items-center justify-start text-left">
-                    <div class="bg-blue-600 p-3 rounded-2xl rounded-bl-none max-w-[80%] shadow-lg">
-                        <p class="text-sm">${node.text}</p>
+                <h2 class="text-2xl font-black text-blue-500 uppercase tracking-tighter">Chat: ${task.partner || 'Unbekannt'}</h2>
+                <div class="bg-slate-900/50 p-6 rounded-[2rem] border border-slate-700 min-h-[120px] flex items-center justify-start text-left shadow-inner">
+                    <div class="bg-blue-600 p-4 rounded-2xl rounded-bl-none max-w-[85%] shadow-lg">
+                        <p class="text-sm font-bold leading-relaxed">${node.text}</p>
                     </div>
                 </div>
                 <div class="space-y-2">
                     ${node.options.map((opt, i) => `
-                        <button onclick="window.chatAction('${opt.next}')" class="w-full bg-slate-700 hover:bg-slate-600 p-3 rounded-xl border border-slate-600 text-sm transition-all">
+                        <button onclick="window.chatAction('${opt.next}')" class="w-full bg-slate-800 hover:bg-slate-700 p-4 rounded-2xl border-2 border-slate-700 text-sm font-bold text-slate-300 transition-all active:scale-95">
                             ${opt.label}
                         </button>
                     `).join('')}
-                    ${node.options.length === 0 ? '<p class="text-slate-500 italic text-sm">Chat beendet.</p>' : ''}
+                    ${node.options.length === 0 ? `
+                        <button onclick="completeTask()" class="w-full bg-blue-600 p-4 rounded-2xl font-black uppercase tracking-widest shadow-lg mt-4">Chat beenden</button>
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -251,28 +276,25 @@ function renderChat(blueprint) {
     drawNode(currentNode);
 }
 
-// Feed Scroller
-function renderScroller(blueprint) {
-    const container = document.getElementById('gameContent');
-    const posts = blueprint?.posts || [
-        { user: "User123", text: "Schönen guten Morgen alle zusammen! ☀️", isBad: false },
-        { user: "Hater44", text: "Du bist so dumm, lösch dich einfach!!!", isBad: true },
-        { user: "NewsBot", text: "ACHTUNG: Morgen regnet es Gold vom Himmel! Klicke hier!", isBad: true }
-    ];
-
+function renderScroller(task, container) {
+    const posts = task.posts || [];
     container.innerHTML = `
-        <div class="space-y-4 h-[500px] overflow-y-auto p-2 border border-slate-700 rounded-xl bg-slate-900/30" id="scrollerBody">
-            <h2 class="text-xl font-bold text-blue-400 sticky top-0 bg-slate-900/80 p-2 z-10">Social Media Feed</h2>
-            <p class="text-xs text-slate-500 mb-4">Finde und markiere Hassrede oder Fake News!</p>
+        <div class="space-y-4 max-h-[600px] overflow-y-auto p-4 border-2 border-slate-800 rounded-[2.5rem] bg-slate-900/50 scroll-smooth" id="scrollerBody">
+            <h2 class="text-2xl font-black text-blue-400 sticky top-0 bg-slate-900/90 py-4 z-10 backdrop-blur-md">Feed-Check</h2>
+            <p class="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-6">Markiere alle problematischen Posts</p>
             ${posts.map((p, i) => `
-                <div class="p-4 bg-slate-800 rounded-xl border border-slate-700 space-y-2 transition-all" onclick="markPost(this, ${p.isBad})">
-                    <p class="font-bold text-xs text-blue-300">@${p.user}</p>
-                    <p class="text-sm text-slate-200">${p.text}</p>
+                <div class="p-5 bg-slate-800 rounded-3xl border border-slate-700 space-y-3 transition-all active:scale-[0.98]" onclick="markPost(this, ${p.isBad})">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs">👤</div>
+                        <p class="font-black text-xs text-blue-400">@${p.user}</p>
+                    </div>
+                    <p class="text-sm text-slate-300 leading-relaxed font-medium">${p.text}</p>
                 </div>
             `).join('')}
-            <div class="p-8 text-center text-slate-500 italic text-sm">Ende des Feeds</div>
+            <div class="py-12 text-center">
+                <button onclick="completeTask()" class="bg-blue-600 px-12 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl">Fertig</button>
+            </div>
         </div>
-        <button onclick="alert('Gut gemacht!')" class="w-full mt-4 bg-blue-600 p-3 rounded-xl font-bold">Fertig</button>
     `;
 }
 
@@ -281,21 +303,19 @@ function markPost(el, isBad) {
     el.classList.add(isBad ? 'bg-green-900/20' : 'bg-red-900/20');
 }
 
-// Detector (Lupe)
-function renderDetector(blueprint) {
-    const container = document.getElementById('gameContent');
-    const imgUrl = blueprint?.image || 'https://via.placeholder.com/600x400?text=Beispielbild';
-
+function renderDetector(task, container) {
+    const imgUrl = task.image || 'https://via.placeholder.com/800x600?text=Bild+wird+geladen...';
     container.innerHTML = `
-        <div class="space-y-4">
-            <h2 class="text-2xl font-bold text-blue-400">Detektor</h2>
-            <p class="text-sm text-slate-400">${blueprint?.question || 'Nutze die Lupe um Details zu finden.'}</p>
-            <div id="detectorCanvas" class="relative w-full aspect-video bg-black rounded-xl overflow-hidden cursor-none touch-none">
-                <img src="${imgUrl}" class="w-full h-full object-cover blur-md">
-                <div id="lupe" class="absolute w-32 h-32 rounded-full border-4 border-white shadow-2xl overflow-hidden pointer-events-none" style="display:none;">
+        <div class="space-y-6">
+            <h2 class="text-2xl font-black text-blue-500 uppercase tracking-tighter">Detektor</h2>
+            <p class="text-slate-400 font-bold">${task.question || 'Finde die Fehler!'}</p>
+            <div id="detectorCanvas" class="relative w-full aspect-[4/3] bg-slate-800 rounded-[2rem] overflow-hidden cursor-none touch-none border-4 border-slate-700 shadow-2xl">
+                <img src="${imgUrl}" class="w-full h-full object-cover blur-xl opacity-50">
+                <div id="lupe" class="absolute w-40 h-40 rounded-full border-4 border-white shadow-[0_0_50px_rgba(255,255,255,0.3)] overflow-hidden pointer-events-none" style="display:none;">
                      <img src="${imgUrl}" id="lupeImg" class="absolute object-cover" style="width:1000%; height:1000%;">
                 </div>
             </div>
+            <button onclick="completeTask()" class="w-full bg-blue-600 p-4 rounded-2xl font-black uppercase tracking-widest">Ich habe alles gefunden</button>
         </div>
     `;
 
@@ -305,8 +325,10 @@ function renderDetector(blueprint) {
 
     const handleMove = (e) => {
         const rect = canvas.getBoundingClientRect();
-        const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-        const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
 
         if (x < 0 || x > rect.width || y < 0 || y > rect.height) {
             lupe.style.display = 'none';
@@ -314,40 +336,37 @@ function renderDetector(blueprint) {
         }
 
         lupe.style.display = 'block';
-        lupe.style.left = (x - 64) + 'px';
-        lupe.style.top = (y - 64) + 'px';
-
-        // Calculate percentages
-        const px = (x / rect.width) * 100;
-        const py = (y / rect.height) * 100;
+        lupe.style.left = (x - 80) + 'px';
+        lupe.style.top = (y - 80) + 'px';
 
         lupeImg.style.width = (rect.width) + 'px';
         lupeImg.style.height = (rect.height) + 'px';
-        lupeImg.style.left = (-x + 64) + 'px';
-        lupeImg.style.top = (-y + 64) + 'px';
+        lupeImg.style.left = (-x + 80) + 'px';
+        lupeImg.style.top = (-y + 80) + 'px';
         lupeImg.style.maxWidth = 'none';
     };
 
     canvas.addEventListener('mousemove', handleMove);
-    canvas.addEventListener('touchmove', handleMove);
+    canvas.addEventListener('touchmove', e => { e.preventDefault(); handleMove(e); }, { passive: false });
 }
 
-// Hotspot
-function renderHotspot(blueprint) {
-    const container = document.getElementById('gameContent');
-    const imgUrl = blueprint?.image || 'https://via.placeholder.com/600x400?text=Hotspot+Bild';
-    const zones = blueprint?.zones || [];
+function renderHotspot(task, container) {
+    const imgUrl = task.image || 'https://via.placeholder.com/800x600?text=Hotspot+Bild';
+    const zones = task.zones || [];
     let found = [];
 
     container.innerHTML = `
-        <div class="space-y-4">
-            <h2 class="text-2xl font-bold text-blue-400">Hotspot Suche</h2>
-            <p class="text-sm text-slate-400">Tippe auf die verdächtigen Stellen!</p>
-            <div id="hotspotContainer" class="relative w-full aspect-video bg-slate-900 rounded-xl overflow-hidden">
+        <div class="space-y-6">
+            <h2 class="text-2xl font-black text-blue-500 uppercase tracking-tighter">Hotspot Suche</h2>
+            <p class="text-slate-400 font-bold">Tippe auf die verdächtigen Stellen!</p>
+            <div id="hotspotContainer" class="relative w-full aspect-video bg-slate-900 rounded-[2rem] overflow-hidden border-4 border-slate-700 shadow-2xl">
                 <img src="${imgUrl}" class="w-full h-full object-contain">
                 <div id="hotspotTouchLayer" class="absolute inset-0"></div>
             </div>
-            <p id="hotspotStatus" class="text-xs text-blue-300 font-bold">Gefunden: 0 / ${zones.length}</p>
+            <div class="flex justify-between items-center px-2">
+                <span id="hotspotStatus" class="text-xs text-blue-400 font-black uppercase tracking-widest">Gefunden: 0 / ${zones.length}</span>
+                <button id="hotspotDone" class="hidden bg-green-600 px-6 py-2 rounded-xl font-black text-xs uppercase" onclick="completeTask()">Weiter</button>
+            </div>
         </div>
     `;
 
@@ -362,7 +381,7 @@ function renderHotspot(blueprint) {
             if (px >= z.x && px <= z.x + z.w && py >= z.y && py <= z.y + z.h) {
                 found.push(i);
                 const marker = document.createElement('div');
-                marker.className = 'absolute border-4 border-green-500 rounded-lg animate-bounce-in';
+                marker.className = 'absolute border-4 border-green-500 rounded-xl animate-bounce-in shadow-[0_0_20px_rgba(34,197,94,0.5)]';
                 marker.style.left = z.x + '%';
                 marker.style.top = z.y + '%';
                 marker.style.width = z.w + '%';
@@ -372,28 +391,25 @@ function renderHotspot(blueprint) {
         });
         document.getElementById('hotspotStatus').textContent = `Gefunden: ${found.length} / ${zones.length}`;
         if (found.length === zones.length && zones.length > 0) {
-            setTimeout(() => alert('Alle Hotspots gefunden!'), 500);
+            document.getElementById('hotspotDone').classList.remove('hidden');
         }
     };
 }
 
-// Password Generator
-function renderPassword(blueprint) {
-    const container = document.getElementById('gameContent');
-    const rules = blueprint?.rules || ['Mind. 8 Zeichen', 'Ein Sonderzeichen'];
-
+function renderPassword(task, container) {
+    const rules = task.rules || ['Mind. 8 Zeichen'];
     container.innerHTML = `
         <div class="space-y-6 animate-bounce-in">
-            <h2 class="text-2xl font-bold text-green-400">Tresor öffnen</h2>
-            <p class="text-sm text-slate-400">Erstelle ein sicheres Passwort mit diesen Regeln:</p>
-            <ul class="text-left text-xs space-y-1 bg-slate-900/50 p-4 rounded-xl border border-slate-700">
-                ${rules.map(r => `<li>🔒 ${r}</li>`).join('')}
-            </ul>
-            <div class="relative">
-                <input type="text" id="pwInput" class="w-full bg-slate-700 p-4 rounded-xl text-center font-mono text-xl border-2 border-slate-600 focus:border-green-500 outline-none" placeholder="Passwort...">
-                <div id="lockIcon" class="text-4xl mt-4">🔒</div>
+            <h2 class="text-2xl font-black text-green-500 uppercase tracking-tighter">Sicherheit</h2>
+            <div class="bg-slate-800 p-6 rounded-[2rem] border-2 border-slate-700 space-y-4">
+                <ul class="text-left text-xs space-y-2 font-bold text-slate-400">
+                    ${rules.map(r => `<li class="flex items-center gap-2"><span class="text-green-500">🔒</span> ${r}</li>`).join('')}
+                </ul>
+                <input type="text" id="pwInput" class="w-full bg-slate-900 border-2 border-slate-700 p-5 rounded-2xl text-center font-mono text-2xl text-white outline-none focus:border-green-500 transition-all" placeholder="Passwort...">
+                <div id="lockIcon" class="text-6xl py-4 transition-all duration-500">🔒</div>
+                <p id="pwFeedback" class="text-[10px] uppercase font-black text-slate-600 tracking-widest">Status: Gesperrt</p>
             </div>
-            <p id="pwFeedback" class="text-xs italic text-slate-500">Das Schloss ist noch zu.</p>
+            <button id="pwSubmit" disabled onclick="completeTask()" class="w-full bg-slate-700 p-4 rounded-2xl font-black uppercase text-slate-500 transition-all">Tresor öffnen</button>
         </div>
     `;
 
@@ -401,277 +417,248 @@ function renderPassword(blueprint) {
         const val = e.target.value;
         const feedback = document.getElementById('pwFeedback');
         const lock = document.getElementById('lockIcon');
+        const btn = document.getElementById('pwSubmit');
 
-        // Simple logic: if length > 5 and contains a special char from rules or generally
-        let secure = val.length >= 8;
+        let secure = val.length >= 8; // Basic validation
         if (secure) {
             lock.textContent = '🔓';
-            feedback.textContent = 'Das Schloss geht auf!';
-            feedback.classList.replace('text-slate-500', 'text-green-400');
+            lock.classList.add('scale-110', 'text-green-500');
+            feedback.textContent = 'Status: Entriegelt';
+            feedback.classList.replace('text-slate-600', 'text-green-500');
+            btn.disabled = false;
+            btn.classList.replace('bg-slate-700', 'bg-green-600');
+            btn.classList.replace('text-slate-500', 'text-white');
         } else {
             lock.textContent = '🔒';
-            feedback.textContent = 'Noch nicht sicher genug...';
-            feedback.classList.replace('text-green-400', 'text-slate-500');
+            lock.classList.remove('scale-110', 'text-green-500');
+            feedback.textContent = 'Status: Gesperrt';
+            feedback.classList.replace('text-green-500', 'text-slate-600');
+            btn.disabled = true;
+            btn.classList.replace('bg-green-600', 'bg-slate-700');
+            btn.classList.replace('text-white', 'text-slate-500');
         }
     };
 }
 
-// Profile Editor
-function renderProfile(blueprint) {
-    const container = document.getElementById('gameContent');
-    const fields = blueprint?.fields || ['name', 'age'];
-    const custom = blueprint?.customFields || [];
-
+function renderProfile(task, container) {
+    const fields = task.fields || ['name'];
+    const custom = task.customFields || [];
     container.innerHTML = `
         <div class="space-y-6 animate-bounce-in">
-            <h2 class="text-2xl font-bold text-blue-400">Profil erstellen</h2>
-            <p class="text-sm text-slate-400">Welche Daten gibst du preis?</p>
-            <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 space-y-4 text-left shadow-2xl">
-                <div class="w-20 h-20 bg-slate-700 rounded-full mx-auto mb-4 border-4 border-blue-500 flex items-center justify-center text-4xl">👤</div>
+            <h2 class="text-2xl font-black text-blue-500 uppercase tracking-tighter">Profil-Check</h2>
+            <div class="bg-slate-800 p-8 rounded-[2.5rem] border border-slate-700 space-y-5 text-left shadow-2xl relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-2 bg-blue-600"></div>
+                <div class="w-24 h-24 bg-slate-700 rounded-full mx-auto mb-6 border-4 border-blue-600 flex items-center justify-center text-5xl shadow-xl">👤</div>
                 ${fields.concat(custom).map(f => `
-                    <div>
-                        <label class="block text-[10px] uppercase font-bold text-slate-500 ml-1">${f}</label>
-                        <input type="text" class="w-full bg-slate-700 p-2 rounded-lg border border-slate-600 text-sm" placeholder="...">
+                    <div class="space-y-1">
+                        <label class="block text-[10px] uppercase font-black text-slate-500 ml-1 tracking-widest">${f}</label>
+                        <input type="text" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-200 outline-none focus:border-blue-500 transition-all" placeholder="Eingabe...">
                     </div>
                 `).join('')}
             </div>
-            <button onclick="alert('Profil gespeichert!')" class="w-full bg-blue-600 p-3 rounded-xl font-bold">Profil veröffentlichen</button>
+            <button onclick="completeTask()" class="w-full bg-blue-600 p-4 rounded-2xl font-black uppercase tracking-widest shadow-xl">Profil speichern</button>
         </div>
     `;
 }
 
-// Bucket Drop
-function renderBucket(blueprint) {
-    const container = document.getElementById('gameContent');
-    const buckets = blueprint?.buckets || ['Privat', 'Öffentlich'];
-    const items = blueprint?.items || [{ text: 'Passwort', target: 0 }, { text: 'Witz', target: 1 }];
+function renderMood(task, container) {
+    container.innerHTML = `
+        <div class="space-y-12 animate-bounce-in py-12">
+            <h2 class="text-2xl font-black text-pink-500 uppercase tracking-tighter">Barometer</h2>
+            <p class="text-xl text-slate-100 font-black leading-tight">${task.question || 'Wie stehst du dazu?'}</p>
+            <div class="px-6 space-y-6">
+                <input type="range" min="1" max="100" value="50" class="w-full h-3 bg-slate-800 rounded-full appearance-none cursor-pointer accent-pink-500 border border-slate-700">
+                <div class="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    <span class="bg-slate-800 px-3 py-1 rounded-lg border border-slate-700">${task.labelLeft || 'Schlecht'}</span>
+                    <span class="bg-slate-800 px-3 py-1 rounded-lg border border-slate-700">${task.labelRight || 'Gut'}</span>
+                </div>
+            </div>
+            <button onclick="completeTask()" class="w-full bg-pink-600 hover:bg-pink-500 p-5 rounded-3xl font-black text-xl uppercase tracking-widest shadow-2xl transition-all active:scale-95">Absenden</button>
+        </div>
+    `;
+}
+
+function renderBucket(task, container) {
+    const buckets = task.buckets || ['Korb A', 'Korb B'];
+    const items = task.items || [];
+    let remaining = items.length;
 
     container.innerHTML = `
-        <div class="space-y-6">
-            <h2 class="text-2xl font-bold text-orange-400">Bucket Drop</h2>
-            <div class="flex flex-wrap gap-2 justify-center mb-8" id="itemSource">
-                ${items.map((item, i) => `
-                    <div draggable="true" ondragstart="event.dataTransfer.setData('text', '${i}')" class="bg-slate-700 p-3 rounded-lg border border-slate-600 cursor-move shadow-md text-sm">
-                        ${item.text}
+        <div class="space-y-8">
+            <h2 class="text-2xl font-black text-orange-500 uppercase tracking-tighter">Bucket Drop</h2>
+            <div class="flex flex-wrap gap-2 justify-center min-h-[100px] p-4 bg-slate-900/30 rounded-3xl border-2 border-dashed border-slate-800" id="itemSource">
+                ${items.map((it, i) => `
+                    <div id="drag-item-${i}" draggable="true" ondragstart="event.dataTransfer.setData('text', '${i}')" class="bg-slate-800 p-4 rounded-2xl border-2 border-slate-700 cursor-move shadow-lg text-sm font-black text-slate-200 transition-all hover:border-orange-500">
+                        ${it.text}
                     </div>
                 `).join('')}
             </div>
             <div class="grid grid-cols-2 gap-4">
                 ${buckets.map((b, i) => `
-                    <div ondragover="event.preventDefault()" ondrop="handleBucketDrop(event, ${i})" class="bg-slate-800 p-4 rounded-2xl border-2 border-dashed border-slate-700 min-h-[120px] flex flex-col items-center justify-center text-center">
-                        <span class="text-3xl mb-2">🗑️</span>
-                        <span class="font-bold text-sm">${b}</span>
-                        <div class="bucket-list mt-2 space-y-1 w-full"></div>
+                    <div ondragover="event.preventDefault()" ondrop="handleBucketDrop(event, ${i})" class="bg-slate-800/50 p-6 rounded-[2.5rem] border-4 border-dashed border-slate-800 min-h-[160px] flex flex-col items-center justify-center text-center transition-all">
+                        <span class="text-4xl mb-3 opacity-30">🗑️</span>
+                        <span class="font-black text-xs uppercase tracking-widest text-slate-500 mb-4">${b}</span>
+                        <div class="bucket-list space-y-2 w-full"></div>
                     </div>
                 `).join('')}
             </div>
         </div>
     `;
-    window.handleBucketDrop = (e, bucketIdx) => {
+
+    window.handleBucketDrop = async (e, bucketIdx) => {
         e.preventDefault();
         const itemIdx = e.dataTransfer.getData('text');
         const item = items[itemIdx];
-        const targetDiv = e.target.closest('.bg-slate-800').querySelector('.bucket-list');
+        const dragEl = document.getElementById(`drag-item-${itemIdx}`);
+        if (!dragEl) return;
+
+        const targetDiv = e.target.closest('div[ondrop]').querySelector('.bucket-list');
+        const isCorrect = item.target === bucketIdx;
+
         const newItem = document.createElement('div');
-        newItem.className = `p-1 text-xs rounded ${item.target === bucketIdx ? 'bg-green-600' : 'bg-red-600'}`;
+        newItem.className = `p-2 text-[10px] font-black uppercase rounded-xl border-2 shadow-inner animate-bounce-in ${isCorrect ? 'bg-green-600/20 border-green-500 text-green-400' : 'bg-red-600/20 border-red-500 text-red-400'}`;
         newItem.textContent = item.text;
         targetDiv.appendChild(newItem);
+
+        dragEl.remove();
+        remaining--;
+        if (remaining <= 0) setTimeout(completeTask, 1000);
     };
 }
 
-// Ranking
-function renderRanking(blueprint) {
-    const container = document.getElementById('gameContent');
-    const items = blueprint?.items || ['Element A', 'Element B', 'Element C'];
-
+function renderRanking(task, container) {
+    const items = [...(task.items || [])];
     container.innerHTML = `
         <div class="space-y-6 animate-bounce-in">
-            <h2 class="text-2xl font-bold text-yellow-400">Ranking</h2>
-            <p class="text-xs text-slate-500">Bringe die Elemente in die richtige Reihenfolge!</p>
-            <div id="sortableList" class="space-y-2">
+            <h2 class="text-2xl font-black text-yellow-500 uppercase tracking-tighter">Ranking</h2>
+            <p class="text-[10px] text-slate-500 uppercase font-black tracking-widest">Tausche die Plätze per Drag & Drop</p>
+            <div id="sortableList" class="space-y-3">
                 ${items.map((it, i) => `
-                    <div draggable="true" ondragstart="handleSortStart(event, ${i})" ondragover="event.preventDefault()" ondrop="handleSortDrop(event, ${i})" class="bg-slate-700 p-4 rounded-xl border border-slate-600 flex items-center gap-4 cursor-move">
-                        <span class="text-slate-500 font-mono">${i+1}.</span>
-                        <span class="flex-1 text-left">${it}</span>
-                        <span class="text-slate-600">☰</span>
+                    <div id="rank-${i}" draggable="true" ondragstart="handleSortStart(event, ${i})" ondragover="event.preventDefault()" ondrop="handleSortDrop(event, ${i})" class="bg-slate-800 p-5 rounded-2xl border-2 border-slate-700 flex items-center gap-5 cursor-move transition-all hover:border-yellow-500 group">
+                        <span class="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center text-xs font-black text-yellow-500 border border-slate-700 group-hover:bg-yellow-500 group-hover:text-black transition-colors">${i+1}</span>
+                        <span class="flex-1 text-left font-bold text-slate-300">${it}</span>
+                        <span class="text-slate-600 opacity-30">☰</span>
                     </div>
                 `).join('')}
             </div>
-            <button onclick="alert('Reihenfolge gespeichert!')" class="w-full bg-yellow-600 p-3 rounded-xl font-bold mt-4">Prüfen</button>
+            <button onclick="completeTask()" class="w-full bg-yellow-600 p-4 rounded-2xl font-black uppercase tracking-widest shadow-xl mt-6">Prüfen & Weiter</button>
         </div>
     `;
 
     let dragIdx;
     window.handleSortStart = (e, i) => dragIdx = i;
     window.handleSortDrop = (e, i) => {
+        // SWAP Logic as requested
         const list = document.getElementById('sortableList');
-        const rows = Array.from(list.children);
-        if (dragIdx < i) list.insertBefore(rows[dragIdx], rows[i].nextSibling);
-        else list.insertBefore(rows[dragIdx], rows[i]);
-        // Update numbers
-        Array.from(list.children).forEach((row, idx) => row.querySelector('span').textContent = (idx + 1) + '.');
+        const itemsList = Array.from(list.children);
+        const sourceText = itemsList[dragIdx].querySelector('.flex-1').textContent;
+        const targetText = itemsList[i].querySelector('.flex-1').textContent;
+
+        itemsList[dragIdx].querySelector('.flex-1').textContent = targetText;
+        itemsList[i].querySelector('.flex-1').textContent = sourceText;
     };
 }
 
-// Pairs
-function renderPairs(blueprint) {
-    const container = document.getElementById('gameContent');
-    const pairs = blueprint?.pairs || [{ left: 'App', right: 'Berechtigung' }, { left: 'Browser', right: 'Cookies' }];
+function renderPairs(task, container) {
+    const pairs = task.pairs || [];
+    const lefts = [...pairs].sort(() => Math.random() - 0.5);
+    const rights = [...pairs].sort(() => Math.random() - 0.5);
+    let matched = 0;
 
     container.innerHTML = `
-        <div class="space-y-6">
-            <h2 class="text-2xl font-bold text-indigo-400">Paare finden</h2>
-            <div class="grid grid-cols-2 gap-8">
-                <div class="space-y-2" id="pairsLeft">
-                    ${pairs.map((p, i) => `<button onclick="selectPair(this, 'left', ${i})" class="w-full bg-slate-800 p-3 rounded-lg border border-slate-700 text-xs transition-all">${p.left}</button>`).join('')}
+        <div class="space-y-8">
+            <h2 class="text-2xl font-black text-indigo-500 uppercase tracking-tighter">Match</h2>
+            <div class="grid grid-cols-2 gap-6">
+                <div class="space-y-3" id="pairsLeft">
+                    ${lefts.map((p, i) => `<button onclick="selectPair(this, 'left', '${p.left}')" class="w-full h-20 bg-slate-800 p-4 rounded-2xl border-2 border-slate-700 text-[10px] font-black uppercase tracking-tighter text-slate-400 transition-all leading-tight shadow-lg overflow-hidden">${p.left}</button>`).join('')}
                 </div>
-                <div class="space-y-2" id="pairsRight">
-                    ${pairs.map((p, i) => `<button onclick="selectPair(this, 'right', ${i})" class="w-full bg-slate-800 p-3 rounded-lg border border-slate-700 text-xs transition-all">${p.right}</button>`).join('')}
+                <div class="space-y-3" id="pairsRight">
+                    ${rights.map((p, i) => `<button onclick="selectPair(this, 'right', '${p.right}')" class="w-full h-20 bg-slate-800 p-4 rounded-2xl border-2 border-slate-700 text-[10px] font-black uppercase tracking-tighter text-slate-400 transition-all leading-tight shadow-lg overflow-hidden">${p.right}</button>`).join('')}
                 </div>
             </div>
         </div>
     `;
 
     let selectedLeft = null;
-    window.selectPair = (btn, side, idx) => {
-        btn.classList.toggle('border-indigo-500');
-        btn.classList.toggle('bg-indigo-900/30');
-        if (side === 'left') selectedLeft = btn;
-        else if (selectedLeft) {
-            alert('Paar verknüpft!');
-            selectedLeft = null;
+    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+
+    window.selectPair = (btn, side, val) => {
+        if (btn.disabled) return;
+
+        if (side === 'left') {
+            document.querySelectorAll('#pairsLeft button').forEach(b => b.classList.remove('border-blue-500', 'bg-blue-600/20', 'text-white'));
+            btn.classList.add('border-blue-500', 'bg-blue-600/20', 'text-white');
+            selectedLeft = { btn, val };
+        } else if (selectedLeft) {
+            const pair = pairs.find(p => p.left === selectedLeft.val && p.right === val);
+            if (pair) {
+                const color = colors[matched % colors.length];
+                [selectedLeft.btn, btn].forEach(b => {
+                    b.disabled = true;
+                    b.style.backgroundColor = color + '20';
+                    b.style.borderColor = color;
+                    b.style.color = color;
+                    b.classList.add('opacity-80', 'scale-95');
+                });
+                matched++;
+                selectedLeft = null;
+                if (matched === pairs.length) setTimeout(completeTask, 1000);
+            } else {
+                btn.classList.add('shake', 'border-red-500');
+                setTimeout(() => btn.classList.remove('shake', 'border-red-500'), 500);
+            }
         }
     };
 }
 
-// Cloze (Lückentext)
-function renderCloze(blueprint) {
-    const container = document.getElementById('gameContent');
-    const text = blueprint?.text || "Das [Internet] ist für viele [Neuland].";
+function renderCloze(task, container) {
+    const text = task.text || "";
+    const fakes = task.fakes || [];
     const words = [];
     const html = text.replace(/\[(.*?)\]/g, (match, word) => {
         words.push(word);
-        return `<span class="cloze-drop bg-slate-900 border-b-2 border-blue-500 px-4 py-1 mx-1 inline-block min-w-[60px]" ondragover="event.preventDefault()" ondrop="handleClozeDrop(event, this)"></span>`;
+        return `<span class="cloze-drop bg-slate-950/50 border-b-4 border-blue-500 px-4 py-1 mx-1 inline-block min-w-[80px] rounded-lg text-transparent" ondragover="event.preventDefault()" ondrop="handleClozeDrop(event, this, '${word}')">.</span>`;
     });
 
+    const allOptions = [...words, ...fakes].sort(() => Math.random() - 0.5);
+    let filled = 0;
+
     container.innerHTML = `
-        <div class="space-y-8 animate-bounce-in">
-            <h2 class="text-2xl font-bold text-blue-400">Lückentext</h2>
-            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 text-lg leading-relaxed text-left">
+        <div class="space-y-10 animate-bounce-in">
+            <h2 class="text-2xl font-black text-blue-500 uppercase tracking-tighter">Lückentext</h2>
+            <div class="bg-slate-800 p-8 rounded-[2.5rem] border border-slate-700 text-base leading-loose text-left shadow-2xl font-medium text-slate-300">
                 ${html}
             </div>
-            <div class="flex flex-wrap gap-2 justify-center" id="clozeSource">
-                ${words.sort().map(w => `<div draggable="true" ondragstart="event.dataTransfer.setData('text', '${w}')" class="bg-blue-600 px-3 py-1 rounded shadow cursor-move">${w}</div>`).join('')}
+            <div class="flex flex-wrap gap-2 justify-center p-4 bg-slate-900/30 rounded-3xl border-2 border-dashed border-slate-800" id="clozeSource">
+                ${allOptions.map((w, i) => `<div id="cloze-word-${i}" draggable="true" ondragstart="event.dataTransfer.setData('text', '${w}|${i}')" class="bg-blue-600 px-4 py-2 rounded-xl shadow-lg cursor-move font-bold text-sm transition-all hover:scale-105 active:scale-95">${w}</div>`).join('')}
             </div>
         </div>
     `;
-    window.handleClozeDrop = (e, el) => {
-        el.textContent = e.dataTransfer.getData('text');
-        el.classList.add('text-blue-400', 'font-bold');
+
+    window.handleClozeDrop = (e, el, correctWord) => {
+        const [droppedWord, idx] = e.dataTransfer.getData('text').split('|');
+        el.textContent = droppedWord;
+        el.classList.remove('text-transparent');
+        el.classList.add('text-white', 'font-black', 'bg-blue-600/20');
+
+        document.getElementById(`cloze-word-${idx}`).classList.add('hidden');
+
+        filled++;
+        if (filled === words.length) setTimeout(completeTask, 1500);
     };
 }
 
-// Tablet-friendly Drag & Drop Helper
-function enableTouchDrag() {
-    let activeItem = null;
-    let offsetX = 0, offsetY = 0;
-
-    document.addEventListener('touchstart', e => {
-        const item = e.target.closest('[draggable="true"]');
-        if (item) {
-            activeItem = item.cloneNode(true);
-            activeItem.style.position = 'fixed';
-            activeItem.style.zIndex = '1000';
-            activeItem.style.pointerEvents = 'none';
-            activeItem.style.opacity = '0.8';
-            activeItem.dataset.sourceId = item.id || '';
-            document.body.appendChild(activeItem);
-
-            const rect = item.getBoundingClientRect();
-            offsetX = e.touches[0].clientX - rect.left;
-            offsetY = e.touches[0].clientY - rect.top;
-
-            updateTouchPos(e.touches[0].clientX, e.touches[0].clientY);
-        }
-    }, { passive: false });
-
-    document.addEventListener('touchmove', e => {
-        if (activeItem) {
-            e.preventDefault();
-            updateTouchPos(e.touches[0].clientX, e.touches[0].clientY);
-        }
-    }, { passive: false });
-
-    document.addEventListener('touchend', e => {
-        if (activeItem) {
-            const x = e.changedTouches[0].clientX;
-            const y = e.changedTouches[0].clientY;
-            activeItem.remove();
-
-            const dropTarget = document.elementFromPoint(x, y)?.closest('[ondrop]');
-            if (dropTarget) {
-                // Simulate drop
-                const dropFn = dropTarget.getAttribute('ondrop');
-                if (dropFn) {
-                    // This is a bit hacky but works for our simple cases
-                    const data = activeItem.textContent.trim();
-                    // We need to pass the right data based on game type
-                    // For now, let's assume text is enough for Cloze and Bucket
-                }
-            }
-            activeItem = null;
-        }
-    });
-
-    function updateTouchPos(x, y) {
-        activeItem.style.left = (x - offsetX) + 'px';
-        activeItem.style.top = (y - offsetY) + 'px';
-    }
-}
-
-// Countdown
-async function renderSummary() {
-    const container = document.getElementById('gameContent');
-    document.getElementById('gamePhase').classList.remove('hidden');
-    document.getElementById('waitingPhase').classList.add('hidden');
-
-    container.innerHTML = `<h2 class="text-3xl font-black text-blue-500 mb-8 animate-bounce-in">Spiel abgeschlossen!</h2>
-                           <div id="summaryList" class="space-y-4">Lade Ergebnisse...</div>`;
-
-    const res = await fetch(`/api/sessions/${currentSessionId}/submissions`);
-    const data = await res.json();
-    const list = document.getElementById('summaryList');
-    list.innerHTML = '';
-
-    if (data.submissions.length === 0) {
-        list.innerHTML = '<p class="text-slate-500 italic">Keine Einsendungen gefunden.</p>';
-    } else {
-        data.submissions.forEach(sub => {
-            const card = document.createElement('div');
-            card.className = 'bg-slate-800 p-4 rounded-2xl border-l-4 text-left shadow-xl animate-bounce-in';
-            card.style.borderLeftColor = sub.team_color;
-            card.innerHTML = `
-                <p class="text-[10px] font-bold text-slate-500 uppercase">${sub.team_name}</p>
-                ${sub.type === 'photo' ? `<img src="${sub.content}" class="w-full h-40 object-cover rounded-lg mt-2">` : `<p class="text-lg italic mt-1">"${sub.content}"</p>`}
-            `;
-            list.appendChild(card);
-        });
-    }
-}
-
-function renderCountdown(blueprint) {
-    const container = document.getElementById('gameContent');
-    let timeLeft = blueprint?.duration || 60;
-
+function renderCountdown(task, container) {
+    let timeLeft = task.duration || 60;
     container.innerHTML = `
-        <div class="space-y-8 animate-bounce-in py-12">
-            <h2 class="text-3xl font-bold text-red-500">Zeit läuft!</h2>
-            <div id="timerDisplay" class="text-7xl font-black text-white bg-slate-800 w-48 h-48 rounded-full border-8 border-red-600 flex items-center justify-center mx-auto shadow-2xl">
+        <div class="space-y-10 animate-bounce-in py-12">
+            <h2 class="text-3xl font-black text-red-500 uppercase tracking-tighter">Countdown!</h2>
+            <div id="timerDisplay" class="text-8xl font-black text-white bg-slate-800 w-56 h-56 rounded-full border-[12px] border-red-600 flex items-center justify-center mx-auto shadow-[0_0_60px_rgba(220,38,38,0.4)] transition-all duration-300">
                 ${timeLeft}
             </div>
-            <p class="text-xl font-bold">${blueprint?.question || 'Löse die Aufgabe!'}</p>
+            <p class="text-2xl font-black text-slate-200">${task.question || 'Löse die Aufgabe!'}</p>
             <div class="pt-8">
-                <button onclick="window.startTimer(this)" class="bg-green-600 px-8 py-3 rounded-xl font-bold text-xl shadow-lg hover:bg-green-500 transition-all">Start</button>
+                <button id="timerBtn" onclick="window.startTimer(this)" class="bg-green-600 hover:bg-green-500 px-16 py-5 rounded-3xl font-black text-2xl uppercase tracking-widest shadow-2xl transition-all active:scale-95">START</button>
             </div>
         </div>
     `;
@@ -682,39 +669,39 @@ function renderCountdown(blueprint) {
         const interval = setInterval(() => {
             timeLeft--;
             display.textContent = timeLeft;
-            if (timeLeft <= 10) display.classList.add('animate-pulse', 'text-red-500', 'border-red-400');
+            if (timeLeft <= 10) {
+                display.classList.add('animate-pulse', 'text-red-500', 'border-red-400');
+                if (timeLeft % 2 === 0) WeltenretterUI.vibrate?.(100);
+            }
             if (timeLeft <= 0) {
                 clearInterval(interval);
-                alert('Zeit abgelaufen!');
+                WeltenretterUI.alert('Zeit abgelaufen!', 'Ende', '⏰').then(completeTask);
             }
         }, 1000);
     };
 }
 
-// Capture (Photo / Statement)
-function renderCapture(mode, blueprint) {
-    const container = document.getElementById('gameContent');
+function renderCapture(mode, task, container) {
     const isPhoto = mode === 'photo';
-
     container.innerHTML = `
-        <div class="space-y-6 animate-bounce-in">
-            <h2 class="text-2xl font-bold ${isPhoto ? 'text-blue-400' : 'text-purple-400'}">${isPhoto ? 'Foto-Check' : 'Text-Statement'}</h2>
-            <p class="text-lg">${blueprint?.question || (isPhoto ? 'Mache ein Foto von etwas verdächtigem' : 'Schreibe ein kurzes Statement')}</p>
+        <div class="space-y-8 animate-bounce-in">
+            <h2 class="text-2xl font-black ${isPhoto ? 'text-blue-500' : 'text-purple-500'} uppercase tracking-tighter">${isPhoto ? 'Foto-Mission' : 'Statement'}</h2>
+            <p class="text-xl font-bold text-slate-200">${task.question || (isPhoto ? 'Mache ein Foto' : 'Schreibe etwas')}</p>
 
             ${isPhoto ? `
-                <div class="relative w-full aspect-square bg-slate-800 rounded-3xl border-4 border-dashed border-slate-700 flex flex-col items-center justify-center overflow-hidden">
+                <div class="relative w-full aspect-square bg-slate-800 rounded-[3rem] border-4 border-dashed border-slate-700 flex flex-col items-center justify-center overflow-hidden group shadow-inner">
                     <img id="capturePreview" class="absolute inset-0 w-full h-full object-cover hidden">
-                    <div id="captureIcon" class="text-6xl mb-4">📸</div>
-                    <label class="bg-blue-600 px-6 py-3 rounded-xl font-bold cursor-pointer hover:bg-blue-500 transition-all">
-                        Kamera öffnen
-                        <input type="file" accept="image/*" capture="environment" class="hidden" onchange="handleCapture(this)">
+                    <div id="captureIcon" class="text-7xl mb-6 opacity-30 group-hover:scale-110 transition-transform duration-500">📸</div>
+                    <label class="bg-blue-600 px-10 py-4 rounded-2xl font-black uppercase tracking-widest cursor-pointer hover:bg-blue-500 transition-all shadow-xl active:scale-95 relative z-10">
+                        Kamera / Galerie
+                        <input type="file" accept="image/*" class="hidden" onchange="handleCapture(this)">
                     </label>
                 </div>
             ` : `
-                <textarea id="statementInput" class="w-full h-40 bg-slate-700 p-4 rounded-2xl border-2 border-slate-600 focus:border-purple-500 outline-none" placeholder="Deine Nachricht..."></textarea>
+                <textarea id="statementInput" class="w-full h-56 bg-slate-800 p-6 rounded-[2rem] border-2 border-slate-700 text-white outline-none focus:border-purple-500 transition-all font-bold text-lg shadow-inner" placeholder="Deine Nachricht..."></textarea>
             `}
 
-            <button id="submitCaptureBtn" onclick="submitCapture('${mode}')" class="w-full ${isPhoto ? 'bg-blue-600' : 'bg-purple-600'} p-4 rounded-2xl font-bold text-lg shadow-lg">Absenden</button>
+            <button id="submitCaptureBtn" onclick="submitCapture('${mode}')" class="w-full ${isPhoto ? 'bg-blue-600' : 'bg-purple-600'} p-5 rounded-3xl font-black text-xl uppercase tracking-widest shadow-2xl transition-all active:scale-95">Absenden</button>
         </div>
     `;
 
@@ -730,7 +717,6 @@ function renderCapture(mode, blueprint) {
         };
         reader.readAsDataURL(file);
 
-        // Upload to server
         const formData = new FormData();
         formData.append('image', file);
         const res = await fetch('/api/upload', { method: 'POST', body: formData });
@@ -740,41 +726,22 @@ function renderCapture(mode, blueprint) {
 
     window.submitCapture = async (m) => {
         const btn = document.getElementById('submitCaptureBtn');
+        const content = m === 'photo' ? document.querySelector('input[type="file"]').dataset.url : document.getElementById('statementInput').value;
+        if (!content) return WeltenretterUI.alert('Bitte erstelle erst eine Einsendung!', 'Halt!', '⚠️');
+
         btn.disabled = true;
-        btn.textContent = 'Wird gesendet...';
+        btn.textContent = 'ÜBERMITTLE...';
 
-        const data = {
+        socket.emit('studentSubmission', {
             sessionId: currentSessionId,
-            teamId: currentTeamId, // I need to make sure I have this
+            teamId: currentTeamId,
             type: m,
-            content: m === 'photo' ? document.querySelector('input[type="file"]').dataset.url : document.getElementById('statementInput').value
-        };
+            content
+        });
 
-        // Notify teacher via socket or API
-        socket.emit('studentSubmission', data);
-
-        alert('Vielen Dank! Deine Antwort wurde übermittelt.');
-        btn.textContent = 'Gesendet!';
+        await WeltenretterUI.alert('Deine Antwort wurde erfolgreich übermittelt.', 'Danke!', '🚀');
+        completeTask();
     };
-}
-
-// Mood Barometer
-function renderMood(blueprint) {
-    const container = document.getElementById('gameContent');
-    container.innerHTML = `
-        <div class="space-y-12 animate-bounce-in py-8">
-            <h2 class="text-2xl font-bold text-pink-400">Stimmungs-Barometer</h2>
-            <p class="text-lg text-slate-200">${blueprint?.question || 'Wie stehst du dazu?'}</p>
-            <div class="px-4">
-                <input type="range" min="1" max="10" value="5" class="w-full h-4 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-pink-500">
-                <div class="flex justify-between mt-4 text-xs font-bold text-slate-400">
-                    <span>${blueprint?.labelLeft || 'Schlecht'}</span>
-                    <span>${blueprint?.labelRight || 'Gut'}</span>
-                </div>
-            </div>
-            <button onclick="alert('Danke für dein Feedback!')" class="w-full bg-pink-600 p-4 rounded-2xl font-bold text-lg shadow-lg">Absenden</button>
-        </div>
-    `;
 }
 
 // Socket Events
@@ -782,11 +749,11 @@ socket.on('gameStarted', (data) => {
     currentGameStatus = 'running';
     document.getElementById('waitingPhase').classList.add('hidden');
     document.getElementById('gamePhase').classList.remove('hidden');
-    renderGame(data.gameType || 'binary', data.blueprint);
+    initGameSequence(data.blueprint, data.gameType || 'binary');
 });
 
 socket.on('gameModeUpdated', (data) => {
-    renderGame(data.gameType, data.blueprint);
+    initGameSequence(data.blueprint, data.gameType);
 });
 
 socket.on('displayResults', () => {
@@ -794,125 +761,104 @@ socket.on('displayResults', () => {
 });
 
 socket.on('gameEnded', () => {
-    alert('Das Spiel wurde von der Lehrkraft beendet.');
-    window.location.href = '/';
+    WeltenretterUI.alert('Das Spiel wurde von der Lehrkraft beendet.', 'Beendet', '🏁').then(() => {
+        window.location.href = '/';
+    });
 });
 
-// Auth & Setup
+// Auth & Join
 document.getElementById('sessionCodeInput')?.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') document.getElementById('joinBtn').click();
-});
-
-document.getElementById('teamCodeInput')?.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') document.getElementById('rejoinBtn').click();
 });
 
 document.getElementById('joinBtn')?.addEventListener('click', async () => {
     const code = document.getElementById('sessionCodeInput').value.trim();
     if (!code) return;
 
-    try {
-        const res = await fetch('/api/join', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code })
-        });
-        const data = await res.json();
-        if (data.success) {
-            currentSessionId = data.sessionId;
-            currentTeamId = data.teamId;
-            currentGameStatus = data.gameStatus;
-            currentGameType = data.gameType || 'binary';
-            currentBlueprint = data.blueprint || null;
-            takenColors = data.takenColors || [];
+    const res = await fetch('/api/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+    });
+    const data = await res.json();
+    if (data.success) {
+        currentSessionId = data.sessionId;
+        currentTeamId = data.teamId;
+        currentGameStatus = data.gameStatus;
+        currentGameType = data.gameType || 'binary';
+        currentBlueprint = data.blueprint || null;
+        takenColors = data.takenColors || [];
 
-            socket.emit('joinSessionRoom', currentSessionId);
-
-            document.getElementById('joinPhase').classList.add('hidden');
-            document.getElementById('createTeamPhase').classList.remove('hidden');
-            renderColorPicker();
-        } else {
-            const err = document.getElementById('joinError');
-            err.textContent = data.error;
-            err.classList.remove('hidden');
-        }
-    } catch (err) {
-        console.error(err);
-    }
-});
-
-document.getElementById('rejoinBtn')?.addEventListener('click', async () => {
-    const teamCode = document.getElementById('teamCodeInput').value.trim().toUpperCase();
-    if (!teamCode) return;
-
-    try {
-        const res = await fetch('/api/rejoin', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ teamCode })
-        });
-        const data = await res.json();
-        if (data.success) {
-            currentSessionId = data.sessionId;
-            currentGameStatus = data.gameStatus;
-            currentGameType = data.gameType || 'binary';
-            currentBlueprint = data.blueprint || null;
-            selectedColor = data.color;
-
-            socket.emit('joinSessionRoom', currentSessionId);
-
-            document.getElementById('rejoinPhase').classList.add('hidden');
-            document.getElementById('joinPhase').classList.add('hidden');
-
-            if (data.gameStatus === 'running') {
-                document.getElementById('gamePhase').classList.remove('hidden');
-                renderGame(currentGameType, currentBlueprint);
-            } else {
-                document.getElementById('waitingPhase').classList.remove('hidden');
-            }
-
-            displayTeamSummary(data.name, data.color, data.groupSize, teamCode, true);
-        } else {
-            const err = document.getElementById('rejoinError');
-            err.textContent = data.error;
-            err.classList.remove('hidden');
-        }
-    } catch (err) {
-        console.error(err);
+        socket.emit('joinSessionRoom', currentSessionId);
+        document.getElementById('joinPhase').classList.add('hidden');
+        document.getElementById('createTeamPhase').classList.remove('hidden');
+        renderColorPicker();
+    } else {
+        const err = document.getElementById('joinError');
+        err.textContent = data.error;
+        err.classList.remove('hidden');
     }
 });
 
 document.getElementById('createTeamBtn')?.addEventListener('click', async () => {
     const name = document.getElementById('teamNameInput').value.trim();
     const groupSize = parseInt(document.getElementById('groupSizeInput').value);
+    if (!name || !selectedColor) return WeltenretterUI.alert('Bitte Name und Farbe wählen!', 'Unvollständig', '⚠️');
 
-    if (!name || !selectedColor || isNaN(groupSize)) return alert('Bitte alles ausfüllen!');
-
-    try {
-        const res = await fetch('/api/teams', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sessionId: currentSessionId, name, color: selectedColor, groupSize })
-        });
-        const data = await res.json();
-        if (data.success) {
-            currentTeamId = data.teamId;
-            document.getElementById('createTeamPhase').classList.add('hidden');
-            if (currentGameStatus === 'running') {
-                document.getElementById('gamePhase').classList.remove('hidden');
-                renderGame(currentGameType, currentBlueprint);
-            } else {
-                document.getElementById('waitingPhase').classList.remove('hidden');
-            }
-            displayTeamSummary(name, selectedColor, groupSize, data.teamCode);
+    const res = await fetch('/api/teams', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: currentSessionId, name, color: selectedColor, groupSize })
+    });
+    const data = await res.json();
+    if (data.success) {
+        currentTeamId = data.teamId;
+        document.getElementById('createTeamPhase').classList.add('hidden');
+        if (currentGameStatus === 'running') {
+            document.getElementById('gamePhase').classList.remove('hidden');
+            initGameSequence(currentBlueprint, currentGameType);
         } else {
-            const err = document.getElementById('createTeamError');
-            err.textContent = data.error;
-            err.classList.remove('hidden');
+            document.getElementById('waitingPhase').classList.remove('hidden');
         }
-    } catch (err) {
-        console.error(err);
+        displayTeamSummary(name, selectedColor, groupSize, data.teamCode);
+    } else {
+        WeltenretterUI.alert(data.error, 'Fehler', '❌');
     }
 });
 
-enableTouchDrag();
+// Summary
+async function renderSummary() {
+    const container = document.getElementById('gameContent');
+    document.getElementById('gamePhase').classList.remove('hidden');
+    document.getElementById('waitingPhase').classList.add('hidden');
+
+    container.innerHTML = `
+        <div class="space-y-8 py-8 animate-bounce-in">
+            <h2 class="text-4xl font-black text-blue-500 uppercase tracking-tighter italic">Abschluss</h2>
+            <div id="summaryList" class="grid grid-cols-1 gap-4">Lade Ergebnisse...</div>
+            <button onclick="window.location.reload()" class="w-full bg-slate-800 p-4 rounded-2xl font-bold border border-slate-700 text-slate-400">Zurück zum Start</button>
+        </div>`;
+
+    const res = await fetch(`/api/sessions/${currentSessionId}/submissions`);
+    const data = await res.json();
+    const list = document.getElementById('summaryList');
+    list.innerHTML = '';
+
+    if (data.submissions.length === 0) {
+        list.innerHTML = '<p class="text-slate-500 italic">Noch keine Einsendungen vorhanden.</p>';
+    } else {
+        data.submissions.forEach(sub => {
+            const card = document.createElement('div');
+            card.className = 'bg-slate-800 p-5 rounded-[2rem] border-l-8 text-left shadow-2xl animate-bounce-in';
+            card.style.borderLeftColor = sub.team_color;
+            card.innerHTML = `
+                <div class="flex justify-between items-center mb-3">
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">${sub.team_name}</p>
+                    <span class="text-[10px] bg-slate-900 px-2 py-0.5 rounded-full text-slate-500">${sub.type}</span>
+                </div>
+                ${sub.type === 'photo' ? `<img src="${sub.content}" class="w-full h-48 object-cover rounded-2xl">` : `<p class="text-lg font-bold text-slate-200 italic leading-snug">"${sub.content}"</p>`}
+            `;
+            list.appendChild(card);
+        });
+    }
+}
