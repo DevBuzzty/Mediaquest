@@ -1,11 +1,12 @@
 const colors = [
     '#ef4444', '#3b82f6', '#22c55e', '#eab308', '#f97316',
-    '#a855f7', '#ec4899', '#6366f1', '#f97316', '#14b8a6'
+    '#a855f7', '#ec4899', '#6366f1', '#8b5cf6', '#14b8a6'
 ];
 let selectedColor = null;
 let currentSessionId = null;
 let currentGameStatus = 'waiting';
 let currentGameType = 'binary';
+let currentBlueprint = null;
 let takenColors = [];
 
 const socket = io();
@@ -69,20 +70,27 @@ function displayTeamSummary(name, color, size, code, isRejoin = false) {
 }
 
 // Mini-Games Rendering
-function renderGame(mode) {
+function renderGame(mode, blueprint = null) {
     currentGameType = mode;
     const container = document.getElementById('gameContent');
     container.style.opacity = '0';
 
+    const question = blueprint?.question || (
+        mode === 'binary' ? 'Ist dieses Bild echt oder ein Fake?' :
+        mode === 'choice' ? 'Welches dieser Merkmale deutet auf ein fehlendes Impressum hin?' :
+        'Woran erkennst du eine seriöse Website? (Mehrere Antworten möglich)'
+    );
+
     setTimeout(() => {
         container.innerHTML = '';
         if (mode === 'binary') {
+            const icon = blueprint?.icon || '🖼️';
             container.innerHTML = `
                 <div class="space-y-6 animate-bounce-in">
                     <h2 class="text-2xl font-bold text-blue-400">Binary Swipe</h2>
-                    <p class="text-slate-400">Ist dieses Bild echt oder ein Fake?</p>
+                    <p class="text-slate-400">${question}</p>
                     <div id="swipeCard" class="swipe-card w-64 h-80 mx-auto bg-slate-700 rounded-3xl border-4 border-slate-600 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden">
-                        <div class="text-7xl mb-4">🖼️</div>
+                        <div class="text-7xl mb-4">${icon}</div>
                         <div class="absolute bottom-0 left-0 right-0 p-4 bg-slate-800/80 border-t border-slate-600">
                             <p class="font-bold text-sm text-blue-300">Echt oder Fake?</p>
                             <p class="text-xs text-slate-400">Wische nach links oder rechts</p>
@@ -100,40 +108,43 @@ function renderGame(mode) {
             `;
             initSwipe();
         } else if (mode === 'choice') {
+            const options = blueprint?.options || [
+                'A) Die Seite ist sehr bunt.',
+                'B) Es gibt keine Kontaktadresse.',
+                'C) Die Schriftart ist Arial.',
+                'D) Die Seite lädt sehr schnell.'
+            ];
             container.innerHTML = `
                 <div class="space-y-6 animate-bounce-in">
                     <h2 class="text-2xl font-bold text-purple-400">Multiple Choice</h2>
-                    <p class="text-slate-400">Welches dieser Merkmale deutet auf ein fehlendes Impressum hin?</p>
+                    <p class="text-slate-400">${question}</p>
                     <div class="grid grid-cols-1 gap-3">
-                        <button onclick="selectChoice(0)" class="choice-btn w-full bg-slate-700 hover:bg-slate-600 p-4 rounded-xl border-2 border-slate-600 text-left transition-all">A) Die Seite ist sehr bunt.</button>
-                        <button onclick="selectChoice(1)" class="choice-btn w-full bg-slate-700 hover:bg-slate-600 p-4 rounded-xl border-2 border-slate-600 text-left transition-all">B) Es gibt keine Kontaktadresse.</button>
-                        <button onclick="selectChoice(2)" class="choice-btn w-full bg-slate-700 hover:bg-slate-600 p-4 rounded-xl border-2 border-slate-600 text-left transition-all">C) Die Schriftart ist Arial.</button>
-                        <button onclick="selectChoice(3)" class="choice-btn w-full bg-slate-700 hover:bg-slate-600 p-4 rounded-xl border-2 border-slate-600 text-left transition-all">D) Die Seite lädt sehr schnell.</button>
+                        ${options.map((opt, i) => `
+                            <button onclick="selectChoice(${i})" class="choice-btn w-full bg-slate-700 hover:bg-slate-600 p-4 rounded-xl border-2 border-slate-600 text-left transition-all">
+                                ${opt.includes(')') ? opt : String.fromCharCode(65+i) + ') ' + opt}
+                            </button>
+                        `).join('')}
                     </div>
                 </div>
             `;
         } else if (mode === 'select') {
+            const options = blueprint?.options || [
+                'Vollständiges Impressum vorhanden',
+                'HTTPS-Verschlüsselung (Schloss-Symbol)',
+                'Keine Werbung auf der ganzen Seite',
+                'Quellenangaben bei Fakten'
+            ];
             container.innerHTML = `
                 <div class="space-y-6 animate-bounce-in">
                     <h2 class="text-2xl font-bold text-yellow-400">Multiple Select</h2>
-                    <p class="text-slate-400">Woran erkennst du eine seriöse Website? (Mehrere Antworten möglich)</p>
+                    <p class="text-slate-400">${question}</p>
                     <div class="space-y-2 text-left">
-                        <label class="flex items-center gap-3 p-4 bg-slate-700 rounded-xl cursor-pointer hover:bg-slate-650 transition-colors border border-slate-600">
-                            <input type="checkbox" class="w-5 h-5 rounded border-slate-500 bg-slate-800 text-blue-500 focus:ring-blue-500">
-                            <span>Vollständiges Impressum vorhanden</span>
-                        </label>
-                        <label class="flex items-center gap-3 p-4 bg-slate-700 rounded-xl cursor-pointer hover:bg-slate-650 transition-colors border border-slate-600">
-                            <input type="checkbox" class="w-5 h-5 rounded border-slate-500 bg-slate-800 text-blue-500 focus:ring-blue-500">
-                            <span>HTTPS-Verschlüsselung (Schloss-Symbol)</span>
-                        </label>
-                        <label class="flex items-center gap-3 p-4 bg-slate-700 rounded-xl cursor-pointer hover:bg-slate-650 transition-colors border border-slate-600">
-                            <input type="checkbox" class="w-5 h-5 rounded border-slate-500 bg-slate-800 text-blue-500 focus:ring-blue-500">
-                            <span>Keine Werbung auf der ganzen Seite</span>
-                        </label>
-                        <label class="flex items-center gap-3 p-4 bg-slate-700 rounded-xl cursor-pointer hover:bg-slate-650 transition-colors border border-slate-600">
-                            <input type="checkbox" class="w-5 h-5 rounded border-slate-500 bg-slate-800 text-blue-500 focus:ring-blue-500">
-                            <span>Quellenangaben bei Fakten</span>
-                        </label>
+                        ${options.map(opt => `
+                            <label class="flex items-center gap-3 p-4 bg-slate-700 rounded-xl cursor-pointer hover:bg-slate-650 transition-colors border border-slate-600">
+                                <input type="checkbox" class="w-5 h-5 rounded border-slate-500 bg-slate-800 text-blue-500 focus:ring-blue-500">
+                                <span>${opt}</span>
+                            </label>
+                        `).join('')}
                     </div>
                     <button onclick="submitSelect()" class="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg active:scale-95">Absenden</button>
                 </div>
@@ -197,11 +208,11 @@ socket.on('gameStarted', (data) => {
     currentGameStatus = 'running';
     document.getElementById('waitingPhase').classList.add('hidden');
     document.getElementById('gamePhase').classList.remove('hidden');
-    renderGame(data.gameType || 'binary');
+    renderGame(data.gameType || 'binary', data.blueprint);
 });
 
 socket.on('gameModeUpdated', (data) => {
-    renderGame(data.gameType);
+    renderGame(data.gameType, data.blueprint);
 });
 
 socket.on('gameEnded', () => {
@@ -233,6 +244,7 @@ document.getElementById('joinBtn')?.addEventListener('click', async () => {
             currentSessionId = data.sessionId;
             currentGameStatus = data.gameStatus;
             currentGameType = data.gameType || 'binary';
+            currentBlueprint = data.blueprint || null;
             takenColors = data.takenColors || [];
 
             socket.emit('joinSessionRoom', currentSessionId);
@@ -265,6 +277,7 @@ document.getElementById('rejoinBtn')?.addEventListener('click', async () => {
             currentSessionId = data.sessionId;
             currentGameStatus = data.gameStatus;
             currentGameType = data.gameType || 'binary';
+            currentBlueprint = data.blueprint || null;
             selectedColor = data.color;
 
             socket.emit('joinSessionRoom', currentSessionId);
@@ -274,7 +287,7 @@ document.getElementById('rejoinBtn')?.addEventListener('click', async () => {
 
             if (data.gameStatus === 'running') {
                 document.getElementById('gamePhase').classList.remove('hidden');
-                renderGame(currentGameType);
+                renderGame(currentGameType, currentBlueprint);
             } else {
                 document.getElementById('waitingPhase').classList.remove('hidden');
             }
@@ -307,7 +320,7 @@ document.getElementById('createTeamBtn')?.addEventListener('click', async () => 
             document.getElementById('createTeamPhase').classList.add('hidden');
             if (currentGameStatus === 'running') {
                 document.getElementById('gamePhase').classList.remove('hidden');
-                renderGame(currentGameType);
+                renderGame(currentGameType, currentBlueprint);
             } else {
                 document.getElementById('waitingPhase').classList.remove('hidden');
             }

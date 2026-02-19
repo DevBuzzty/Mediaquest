@@ -1,14 +1,54 @@
 const socket = io();
 
+let myBlueprints = [];
+
 async function checkAuth() {
     const res = await fetch('/api/me');
     const data = await res.json();
     if (!data.loggedIn) window.location.href = '/login.html';
     else {
         document.getElementById('teacherUsername').textContent = data.username;
+        loadBlueprints();
         loadActiveSession();
         loadHistory();
     }
+}
+
+async function loadBlueprints() {
+    const res = await fetch('/api/blueprints');
+    const data = await res.json();
+    myBlueprints = data.blueprints;
+    updateBlueprintSelects();
+}
+
+function updateBlueprintSelects() {
+    const mainSelect = document.getElementById('blueprintSelect');
+    const devList = document.getElementById('devBlueprintList');
+    if (!mainSelect || !devList) return;
+
+    mainSelect.innerHTML = '<option value="">Zufälliger Platzhalter</option>';
+    devList.innerHTML = '';
+
+    myBlueprints.forEach(bp => {
+        // Add to main select
+        const opt = document.createElement('option');
+        opt.value = bp.id;
+        opt.textContent = `[${bp.game_type}] ${bp.title}`;
+        mainSelect.appendChild(opt);
+
+        // Add to dev list
+        const btn = document.createElement('button');
+        btn.className = 'bg-slate-700 hover:bg-blue-600 px-3 py-1 rounded text-[10px] transition-colors border border-slate-600';
+        btn.textContent = bp.title;
+        btn.onclick = () => sendBlueprint(bp.id);
+        devList.appendChild(btn);
+    });
+}
+
+function toggleBlueprintSelect(gameType) {
+    const container = document.getElementById('blueprintSelectContainer');
+    container.classList.remove('hidden');
+    // We could filter the select here if we wanted to
 }
 
 async function loadActiveSession() {
@@ -159,10 +199,12 @@ async function viewDetails(id, code) {
 document.getElementById('startSessionBtn').addEventListener('click', async () => {
     const maxTeams = parseInt(document.getElementById('maxTeams').value);
     const gameType = document.getElementById('gameType').value;
+    const blueprintId = document.getElementById('blueprintSelect').value;
+
     const res = await fetch('/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ maxTeams, gameType })
+        body: JSON.stringify({ maxTeams, gameType, blueprintId })
     });
     if (res.ok) loadActiveSession();
     else alert('Fehler beim Starten der Session');
@@ -209,12 +251,29 @@ async function changeGameMode(mode) {
     const res = await fetch('/api/sessions/active/mode', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameType: mode })
+        body: JSON.stringify({ gameType: mode, blueprintId: null })
     });
     if (res.ok) {
         document.getElementById('activeGameModeDisplay').textContent = mode;
     } else {
         alert('Fehler beim Modus-Wechsel');
+    }
+}
+
+async function sendBlueprint(id) {
+    const bp = myBlueprints.find(b => b.id == id);
+    if (!bp) return;
+
+    const res = await fetch('/api/sessions/active/mode', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameType: bp.game_type, blueprintId: bp.id })
+    });
+
+    if (res.ok) {
+        document.getElementById('activeGameModeDisplay').textContent = `${bp.game_type} (${bp.title})`;
+    } else {
+        alert('Fehler beim Senden des Blueprints');
     }
 }
 

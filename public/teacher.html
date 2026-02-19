@@ -12,6 +12,7 @@
         <h1 class="text-2xl font-bold text-blue-500">Weltenretter Lehrer-Dashboard</h1>
         <div class="flex items-center gap-4">
             <span id="teacherUsername" class="text-slate-300"></span>
+            <a href="/blueprints.html" class="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-sm font-bold transition-colors">Blueprint Creator</a>
             <a href="/" class="text-slate-400 hover:text-white text-sm">Zur Startseite</a>
             <button id="logoutBtn" class="bg-slate-700 hover:bg-red-600 px-3 py-1 rounded text-sm transition-colors">Abmelden</button>
         </div>
@@ -56,12 +57,15 @@
                         <p class="text-slate-500 mt-2">Beobachte deine Teams bei der Forschung...</p>
                     </div>
                     <div class="pt-8 space-y-4">
-                        <div class="inline-flex items-center gap-4 bg-slate-700/50 p-4 rounded-xl border border-slate-600">
-                            <span class="text-sm font-bold text-blue-400 uppercase tracking-tight">Dev-Modus: Modus live wechseln</span>
-                            <div class="flex gap-2">
-                                <button onclick="changeGameMode('binary')" class="bg-slate-600 hover:bg-blue-600 px-3 py-1 rounded text-xs transition-colors">Swipe</button>
-                                <button onclick="changeGameMode('choice')" class="bg-slate-600 hover:bg-blue-600 px-3 py-1 rounded text-xs transition-colors">Choice</button>
-                                <button onclick="changeGameMode('select')" class="bg-slate-600 hover:bg-blue-600 px-3 py-1 rounded text-xs transition-colors">Select</button>
+                        <div class="flex flex-col items-center gap-4 bg-slate-700/50 p-4 rounded-xl border border-slate-600">
+                            <span class="text-sm font-bold text-blue-400 uppercase tracking-tight">Dev-Modus: Blueprint live senden</span>
+                            <div id="devBlueprintList" class="flex flex-wrap justify-center gap-2">
+                                <!-- Blueprints as small buttons -->
+                            </div>
+                            <div class="flex gap-2 border-t border-slate-600 pt-2 w-full justify-center">
+                                <button onclick="changeGameMode('binary')" class="bg-slate-600 hover:bg-blue-600 px-3 py-1 rounded text-xs transition-colors">Reset Swipe</button>
+                                <button onclick="changeGameMode('choice')" class="bg-slate-600 hover:bg-blue-600 px-3 py-1 rounded text-xs transition-colors">Reset Choice</button>
+                                <button onclick="changeGameMode('select')" class="bg-slate-600 hover:bg-blue-600 px-3 py-1 rounded text-xs transition-colors">Reset Select</button>
                             </div>
                         </div>
                         <br>
@@ -83,10 +87,16 @@
                         </div>
                         <div class="flex items-center gap-2">
                             <label for="gameType" class="text-slate-400">Spielmodus:</label>
-                            <select id="gameType" class="bg-slate-700 border border-slate-600 rounded px-3 py-1">
+                            <select id="gameType" onchange="toggleBlueprintSelect(this.value)" class="bg-slate-700 border border-slate-600 rounded px-3 py-1">
                                 <option value="binary">Binary Swipe</option>
                                 <option value="choice">Multiple Choice</option>
                                 <option value="select">Multiple Select</option>
+                            </select>
+                        </div>
+                        <div id="blueprintSelectContainer" class="hidden flex items-center gap-2">
+                            <label for="blueprintSelect" class="text-slate-400">Content-Blueprint:</label>
+                            <select id="blueprintSelect" class="bg-slate-700 border border-slate-600 rounded px-3 py-1 max-w-[200px]">
+                                <option value="">Zufälliger Platzhalter</option>
                             </select>
                         </div>
                     </div>

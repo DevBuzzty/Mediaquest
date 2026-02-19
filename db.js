@@ -18,10 +18,12 @@ db.serialize(() => {
         status TEXT DEFAULT 'active',
         game_status TEXT DEFAULT 'waiting', -- 'waiting' or 'running'
         game_type TEXT DEFAULT 'binary', -- 'binary', 'choice', 'select'
+        blueprint_id INTEGER,
         max_teams INTEGER DEFAULT 5,
         created_at DATETIME,
         closed_at DATETIME,
-        FOREIGN KEY (teacher_id) REFERENCES teachers(id)
+        FOREIGN KEY (teacher_id) REFERENCES teachers(id),
+        FOREIGN KEY (blueprint_id) REFERENCES blueprints(id)
     )`);
 
     db.run(`CREATE TABLE IF NOT EXISTS teams (
@@ -35,11 +37,22 @@ db.serialize(() => {
         FOREIGN KEY (session_id) REFERENCES sessions(id)
     )`);
 
+    db.run(`CREATE TABLE IF NOT EXISTS blueprints (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        teacher_id INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        game_type TEXT NOT NULL,
+        content TEXT NOT NULL, -- JSON
+        created_at DATETIME,
+        FOREIGN KEY (teacher_id) REFERENCES teachers(id)
+    )`);
+
     // Indexes for performance
     db.run(`CREATE INDEX IF NOT EXISTS idx_sessions_code ON sessions(code)`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_teams_code ON teams(team_code)`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_sessions_teacher ON sessions(teacher_id)`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_teams_session ON teams(session_id)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_blueprints_teacher ON blueprints(teacher_id)`);
 });
 
 // Promise-based wrapper

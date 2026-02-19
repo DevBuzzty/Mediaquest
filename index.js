@@ -133,9 +133,41 @@ app.get('/api/me', (req, res) => {
     }
 });
 
+// Blueprint Routes
+app.get('/api/blueprints', isAuthenticated, async (req, res) => {
+    try {
+        const blueprints = await dbAsync.all('SELECT * FROM blueprints WHERE teacher_id = ? ORDER BY created_at DESC', [req.session.teacherId]);
+        res.json({ blueprints: blueprints.map(bp => ({ ...bp, content: JSON.parse(bp.content) })) });
+    } catch (err) {
+        res.status(500).json({ error: 'Datenbankfehler' });
+    }
+});
+
+app.post('/api/blueprints', isAuthenticated, async (req, res) => {
+    const { title, gameType, content } = req.body;
+    try {
+        await dbAsync.run(
+            'INSERT INTO blueprints (teacher_id, title, game_type, content, created_at) VALUES (?, ?, ?, ?, ?)',
+            [req.session.teacherId, title, gameType, JSON.stringify(content), new Date().toISOString()]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Datenbankfehler' });
+    }
+});
+
+app.delete('/api/blueprints/:id', isAuthenticated, async (req, res) => {
+    try {
+        await dbAsync.run('DELETE FROM blueprints WHERE id = ? AND teacher_id = ?', [req.params.id, req.session.teacherId]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Datenbankfehler' });
+    }
+});
+
 app.post('/api/sessions', isAuthenticated, async (req, res) => {
     const teacherId = req.session.teacherId;
-    const { maxTeams, gameType } = req.body;
+    const { maxTeams, gameType, blueprintId } = req.body;
 
     try {
         const activeSession = await dbAsync.get('SELECT id FROM sessions WHERE teacher_id = ? AND status = "active"', [teacherId]);
@@ -146,7 +178,10 @@ app.post('/api/sessions', isAuthenticated, async (req, res) => {
         const code = Math.random().toString(36).substring(2, 8).toUpperCase();
         const createdAt = new Date().toISOString();
 
-        await dbAsync.run('INSERT INTO sessions (teacher_id, code, max_teams, game_type, created_at) VALUES (?, ?, ?, ?, ?)', [teacherId, code, maxTeams || 5, gameType || 'binary', createdAt]);
+        await dbAsync.run(
+            'INSERT INTO sessions (teacher_id, code, max_teams, game_type, blueprint_id, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+            [teacherId, code, maxTeams || 5, gameType || 'binary', blueprintId || null, createdAt]
+        );
         res.json({ success: true, code: code });
     } catch (err) {
         res.status(500).json({ error: 'Fehler beim Erstellen der Session' });
@@ -217,13 +252,19 @@ app.post('/api/rejoin', async (req, res) => {
     const { teamCode } = req.body;
     try {
         const team = await dbAsync.get(`
-            SELECT t.*, s.status as session_status, s.game_status, s.game_type, s.code as session_code
+            SELECT t.*, s.status as session_status, s.game_status, s.game_type, s.blueprint_id, s.code as session_code
             FROM teams t
             JOIN sessions s ON t.session_id = s.id
             WHERE t.team_code = ? AND s.status = 'active'
         `, [teamCode.toUpperCase()]);
 
         if (!team) return res.status(404).json({ error: 'Team-Code ungültig oder Session beendet.' });
+
+        let blueprint = null;
+        if (team.blueprint_id) {
+            const bp = await dbAsync.get('SELECT content FROM blueprints WHERE id = ?', [team.blueprint_id]);
+            if (bp) blueprint = JSON.parse(bp.content);
+        }
 
         res.json({
             success: true,
@@ -234,6 +275,7 @@ app.post('/api/rejoin', async (req, res) => {
             groupSize: team.group_size,
             gameStatus: team.game_status,
             gameType: team.game_type,
+            blueprint: blueprint,
             sessionCode: team.session_code
         });
     } catch (err) {
@@ -250,12 +292,19 @@ app.post('/api/join', async (req, res) => {
         const teams = await dbAsync.all('SELECT color FROM teams WHERE session_id = ?', [session.id]);
         const takenColors = teams.map(t => t.color);
 
+        let blueprint = null;
+        if (session.blueprint_id) {
+            const bp = await dbAsync.get('SELECT content FROM blueprints WHERE id = ?', [session.blueprint_id]);
+            if (bp) blueprint = JSON.parse(bp.content);
+        }
+
         res.json({
             success: true,
             sessionId: session.id,
             maxTeams: session.max_teams,
             gameStatus: session.game_status,
             gameType: session.game_type,
+            blueprint: blueprint,
             takenColors
         });
     } catch (err) {
@@ -347,13 +396,19 @@ app.patch('/api/sessions/active/limit', isAuthenticated, async (req, res) => {
 // Start Game (Teacher)
 app.post('/api/sessions/active/start', isAuthenticated, async (req, res) => {
     try {
-        const session = await dbAsync.get('SELECT id, game_type FROM sessions WHERE teacher_id = ? AND status = "active"', [req.session.teacherId]);
+        const session = await dbAsync.get('SELECT id, game_type, blueprint_id FROM sessions WHERE teacher_id = ? AND status = "active"', [req.session.teacherId]);
         if (!session) return res.status(404).json({ error: 'Keine aktive Session gefunden' });
 
         await dbAsync.run('UPDATE sessions SET game_status = "running" WHERE id = ?', [session.id]);
 
+        let blueprint = null;
+        if (session.blueprint_id) {
+            const bp = await dbAsync.get('SELECT content FROM blueprints WHERE id = ?', [session.blueprint_id]);
+            if (bp) blueprint = JSON.parse(bp.content);
+        }
+
         // Notify all students in this session
-        io.to(`session_${session.id}`).emit('gameStarted', { gameType: session.game_type });
+        io.to(`session_${session.id}`).emit('gameStarted', { gameType: session.game_type, blueprint });
 
         res.json({ success: true });
     } catch (err) {
@@ -363,15 +418,21 @@ app.post('/api/sessions/active/start', isAuthenticated, async (req, res) => {
 
 // Live Change Game Mode (Teacher/Dev)
 app.patch('/api/sessions/active/mode', isAuthenticated, async (req, res) => {
-    const { gameType } = req.body;
+    const { gameType, blueprintId } = req.body;
     try {
         const session = await dbAsync.get('SELECT id FROM sessions WHERE teacher_id = ? AND status = "active"', [req.session.teacherId]);
         if (!session) return res.status(404).json({ error: 'Keine aktive Session gefunden' });
 
-        await dbAsync.run('UPDATE sessions SET game_type = ? WHERE id = ?', [gameType, session.id]);
+        await dbAsync.run('UPDATE sessions SET game_type = ?, blueprint_id = ? WHERE id = ?', [gameType, blueprintId || null, session.id]);
+
+        let blueprint = null;
+        if (blueprintId) {
+            const bp = await dbAsync.get('SELECT content FROM blueprints WHERE id = ?', [blueprintId]);
+            if (bp) blueprint = JSON.parse(bp.content);
+        }
 
         // Notify all students in this session
-        io.to(`session_${session.id}`).emit('gameModeUpdated', { gameType });
+        io.to(`session_${session.id}`).emit('gameModeUpdated', { gameType, blueprint });
 
         res.json({ success: true });
     } catch (err) {

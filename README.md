@@ -106,12 +106,19 @@ npm run dev
 ### Für Lehrkräfte
 1. Gehe auf [http://localhost:3000/login.html](http://localhost:3000/login.html).
 2. Logge dich mit deinem erstellten Account ein.
-3. Klicke auf **"Neue Session starten"**.
-4. Teile den **Session-Code** (z.B. `AB12CD`) deiner Klasse mit.
+3. **Blueprint Creator (Optional):** Erstelle in diesem Bereich eigene Inhalte (Fragen, Swipe-Karten). Diese können beim Session-Start ausgewählt oder live ins Spiel gepusht werden.
+4. Klicke auf **"Neue Session starten"**. Wähle dabei den Spielmodus und optional einen Blueprint aus.
+5. Teile den **Session-Code** (z.B. `AB12CD`) deiner Klasse mit.
 5. Im Dashboard siehst du live, welche Teams beitreten. Du kannst das Team-Limit anpassen oder Teams löschen.
 6. Jedes Team hat einen eigenen **Team-Code**. Sollte ein Schüler die App schließen, kann er über diesen Code wieder seinem Team beitreten.
 7. Klicke auf **"Spiel jetzt starten!"**, um alle angemeldeten Teams in den Spielmodus zu versetzen.
-8. Sessions können über **"Session beenden"** archiviert und später über die Historie mit **"Fortsetzen"** wieder reaktiviert werden.
+8. **Live-Steuerung:** Während das Spiel läuft, kannst du über den "Dev-Modus" im Dashboard jederzeit neue Blueprints an alle Teams senden oder den Modus wechseln.
+9. Sessions können über **"Session beenden"** archiviert und später über die Historie mit **"Fortsetzen"** wieder reaktiviert werden.
+
+### Integrierte Mini-Games
+- **Binary Swipe:** Karten nach links (Nein/Fake) oder rechts (Ja/Echt) wischen. Ideal für Fakten-Checks.
+- **Multiple Choice:** Eine richtige Antwort aus mehreren Möglichkeiten wählen.
+- **Multiple Select:** Mehrere zutreffende Antworten markieren.
 
 ### Für Schüler
 1. Gehe auf [http://localhost:3000/student.html](http://localhost:3000/student.html).
