@@ -4,154 +4,149 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lehrer Dashboard - Weltenretter</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-    <script src="/socket.io/socket.io.js"></script>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/css/app.css">
+    <link rel="stylesheet" href="/js/teacher/print.css" media="print">
 </head>
 <body class="bg-slate-900 text-white min-h-screen">
-    <nav class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex justify-between items-center">
+    <nav class="bg-slate-800 border-b border-slate-700 px-4 md:px-6 py-4 flex flex-wrap gap-3 justify-between items-center">
         <h1 class="text-2xl font-bold text-blue-500">Weltenretter Lehrer-Dashboard</h1>
-        <div class="flex items-center gap-4">
-            <span id="teacherUsername" class="text-slate-300"></span>
+        <div class="flex flex-wrap items-center gap-4">
+            <span id="teacherUsername" class="text-slate-300 break-all"></span>
+            <a href="/blueprints.html" class="text-blue-400 hover:text-blue-300 text-sm font-bold">Spielrunden bearbeiten</a>
             <a href="/" class="text-slate-400 hover:text-white text-sm">Zur Startseite</a>
-            <button id="logoutBtn" class="bg-slate-700 hover:bg-red-600 px-3 py-1 rounded text-sm transition-colors">Abmelden</button>
+            <button type="button" id="changePasswordBtn" class="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-sm transition-colors">Passwort ändern</button>
+            <button type="button" id="logoutBtn" class="bg-slate-700 hover:bg-red-600 disabled:opacity-50 px-3 py-1 rounded text-sm transition-colors">Abmelden</button>
         </div>
     </nav>
-    <main class="max-w-6xl mx-auto p-6 space-y-8">
+
+    <div id="connectionBanner" role="status" class="hidden bg-amber-600 text-white text-sm font-bold text-center px-4 py-2">
+        Verbindung zum Server unterbrochen. Live-Daten werden nach dem Wiederverbinden aktualisiert.
+    </div>
+    <div id="noticeBar" role="status" class="hidden bg-blue-700 text-white text-sm font-bold text-center px-4 py-2"></div>
+
+    <main class="max-w-6xl mx-auto p-4 md:p-6 space-y-8">
+        <p id="loadingHint" class="text-slate-400 text-center py-12">Lade Dashboard...</p>
+
         <section id="activeSessionContainer" class="hidden">
-            <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-lg">
-                <div class="flex justify-between items-start mb-6">
-                    <div>
-                        <h2 class="text-3xl font-bold text-green-400">Aktive Session</h2>
-                        <div class="flex items-center gap-4 mt-2">
+            <div class="bg-slate-800 rounded-2xl p-4 md:p-6 border border-slate-700 shadow-lg space-y-8">
+                <div class="flex flex-wrap gap-4 justify-between items-start">
+                    <div class="space-y-3 min-w-0">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <h2 class="text-3xl font-bold text-green-400">Aktive Session</h2>
+                            <span id="phaseBadge" class="text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full bg-slate-700 text-slate-300"></span>
+                        </div>
+                        <p class="text-slate-400">Spielrunde: <span id="sessionBlueprintTitle" class="text-white font-bold break-words"></span></p>
+                        <div class="flex flex-wrap items-center gap-4">
                             <p class="text-slate-400">Session-Code: <span id="sessionCodeDisplay" class="text-2xl font-mono text-white bg-slate-700 px-2 py-1 rounded"></span></p>
-                            <div class="flex items-center gap-2 bg-slate-700 px-3 py-1 rounded-lg">
+                            <form id="limitForm" class="flex items-center gap-2 bg-slate-700 px-3 py-1 rounded-lg">
                                 <label for="updateMaxTeams" class="text-sm">Team-Limit:</label>
-                                <input type="number" id="updateMaxTeams" min="1" max="10" class="bg-slate-800 border border-slate-600 rounded w-12 text-center text-sm">
-                                <button id="updateLimitBtn" class="bg-blue-600 hover:bg-blue-500 text-xs px-2 py-1 rounded">Update</button>
-                            </div>
+                                <input type="number" id="updateMaxTeams" min="1" max="10" step="1" required class="bg-slate-800 border border-slate-600 rounded w-14 text-center text-sm py-1">
+                                <button type="submit" id="updateLimitBtn" class="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-xs px-2 py-1 rounded">Ändern</button>
+                            </form>
+                            <span id="teamCountDisplay" class="text-sm text-slate-400"></span>
                         </div>
                     </div>
-                    <button id="closeSessionBtn" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-bold transition-colors">Session beenden</button>
-                </div>
-                <div id="lobbyView">
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8" id="teamList"></div>
-                    <div class="flex justify-center">
-                        <button id="startGameBtn" class="bg-green-600 hover:bg-green-700 px-12 py-4 rounded-2xl font-bold text-2xl transition-all transform hover:scale-105 shadow-lg">
-                            Spiel jetzt starten!
-                        </button>
-                    </div>
+                    <button type="button" id="closeSessionBtn" class="bg-red-600 hover:bg-red-700 disabled:opacity-50 px-4 py-2 rounded-lg font-bold transition-colors">Session beenden</button>
                 </div>
 
-                <!-- Game Running View (Placeholder) -->
-                <div id="gameView" class="hidden py-8 space-y-8">
-                    <div class="flex flex-col lg:flex-row gap-8">
-                        <div class="flex-1 space-y-8">
-                            <div class="text-center">
-                                <div class="inline-block p-4 bg-green-900/30 rounded-full animate-pulse border-2 border-green-500 mb-4">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                                <h2 class="text-4xl font-black text-green-400 mb-2 uppercase tracking-widest">Das Spiel läuft</h2>
-                                <p class="text-lg text-slate-400">Aktueller Modus: <span id="activeGameModeDisplay" class="text-blue-400 font-bold uppercase"></span></p>
-                            </div>
+                <div id="runningHeadline" class="hidden text-center">
+                    <h3 class="text-3xl font-black text-green-400 mb-1 uppercase tracking-widest">Das Spiel läuft</h3>
+                    <p id="resultsEnabledHint" class="hidden text-sm text-indigo-300">Die Ergebnisse sind für die Teams freigegeben.</p>
+                </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="activeGameTeamList">
-                                <!-- Enhanced Team Cards here -->
-                            </div>
-                        </div>
+                <div id="boardPanel" class="hidden space-y-6"></div>
 
-                        <div class="w-full lg:w-80 space-y-6">
-                            <div class="bg-slate-700/50 p-6 rounded-2xl border border-slate-600">
-                                <h3 class="text-sm font-black text-blue-400 uppercase tracking-widest mb-4">Template & Stationen</h3>
-                                <div id="templateOverviewList" class="space-y-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
-                                    <p class="text-xs text-slate-500 italic">Lade Template-Details...</p>
-                                </div>
-                            </div>
-                        </div>
+                <div id="classicPanel" class="flex flex-col lg:flex-row gap-8">
+                    <div class="flex-1 min-w-0 space-y-4">
+                        <h3 class="text-xl font-bold border-b border-slate-700 pb-2">Teams</h3>
+                        <div id="teamList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
                     </div>
-
-                    <div class="pt-8 space-y-4 border-t border-slate-700">
-                        <div class="flex flex-col items-center gap-4 bg-slate-700/50 p-4 rounded-xl border border-slate-600">
-                            <span class="text-sm font-bold text-blue-400 uppercase tracking-tight">Dev-Modus: Blueprint live senden</span>
-                            <div id="devBlueprintList" class="flex flex-wrap justify-center gap-2">
-                                <!-- Blueprints as small buttons -->
+                    <aside class="w-full lg:w-80 space-y-4">
+                        <div class="bg-slate-700/50 p-4 rounded-2xl border border-slate-600">
+                            <div class="flex justify-between items-center gap-2 mb-4">
+                                <h3 id="overviewHeading" class="text-sm font-black text-blue-400 uppercase tracking-widest">Aufgaben</h3>
+                                <button type="button" id="showQrBtn" class="hidden bg-blue-600 hover:bg-blue-500 text-xs px-3 py-1 rounded-full font-bold transition-colors">QR-Codes drucken</button>
                             </div>
-                            <div class="flex flex-wrap gap-1 border-t border-slate-600 pt-2 w-full justify-center">
-                                <button onclick="changeGameMode('binary')" class="bg-slate-600 hover:bg-blue-600 px-2 py-0.5 rounded text-[10px] transition-colors">Swipe</button>
-                                <button onclick="changeGameMode('choice')" class="bg-slate-600 hover:bg-blue-600 px-2 py-0.5 rounded text-[10px] transition-colors">Choice</button>
-                                <button onclick="changeGameMode('select')" class="bg-slate-600 hover:bg-blue-600 px-2 py-0.5 rounded text-[10px] transition-colors">Select</button>
-                                <button onclick="changeGameMode('chat')" class="bg-slate-600 hover:bg-blue-600 px-2 py-0.5 rounded text-[10px] transition-colors">Chat</button>
-                                <button onclick="changeGameMode('scroller')" class="bg-slate-600 hover:bg-blue-600 px-2 py-0.5 rounded text-[10px] transition-colors">Scroller</button>
-                                <button onclick="changeGameMode('hotspot')" class="bg-slate-600 hover:bg-blue-600 px-2 py-0.5 rounded text-[10px] transition-colors">Hotspot</button>
-                                <button onclick="changeGameMode('mood')" class="bg-slate-600 hover:bg-blue-600 px-2 py-0.5 rounded text-[10px] transition-colors">Mood</button>
-                                <button onclick="changeGameMode('countdown')" class="bg-slate-600 hover:bg-blue-600 px-2 py-0.5 rounded text-[10px] transition-colors">Timer</button>
-                            </div>
+                            <div id="templateOverviewList" class="space-y-3 max-h-96 overflow-y-auto pr-2"></div>
                         </div>
-                        <br>
-                        <button id="endGameBtn" class="bg-red-600 hover:bg-red-700 px-8 py-3 rounded-xl font-bold transition-all">
-                            Spiel beenden
-                        </button>
-                        <button id="showResultsBtn" class="bg-indigo-600 hover:bg-indigo-700 px-8 py-3 rounded-xl font-bold transition-all">
-                            Ergebnisse für alle zeigen
-                        </button>
-                    </div>
+                        <form id="switchForm" class="bg-slate-700/50 p-4 rounded-2xl border border-slate-600 space-y-3">
+                            <label for="switchBlueprintSelect" class="block text-sm font-black text-blue-400 uppercase tracking-widest">Spielrunde wechseln</label>
+                            <select id="switchBlueprintSelect" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-3 py-2 font-bold text-blue-400"></select>
+                            <button type="submit" id="switchBlueprintBtn" class="w-full bg-slate-600 hover:bg-blue-600 disabled:opacity-50 px-3 py-2 rounded-xl text-sm font-bold transition-colors">Live wechseln</button>
+                            <p class="text-xs text-slate-400">Alle Teams beginnen dann mit der neuen Spielrunde von vorn.</p>
+                        </form>
+                    </aside>
+                </div>
 
-                    <div id="submissionsContainer" class="mt-12 text-left space-y-4">
-                        <h3 class="text-xl font-bold border-b border-slate-700 pb-2">Studenten-Einsendungen</h3>
-                        <div id="submissionsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <!-- Injected by JS -->
-                        </div>
-                    </div>
+                <div class="flex flex-wrap justify-center gap-4">
+                    <button type="button" id="startGameBtn" class="hidden bg-green-600 hover:bg-green-700 disabled:opacity-50 px-12 py-4 rounded-2xl font-bold text-2xl transition-colors shadow-lg">Spiel jetzt starten!</button>
+                    <button type="button" id="endGameBtn" class="hidden bg-red-600 hover:bg-red-700 disabled:opacity-50 px-8 py-3 rounded-xl font-bold transition-colors">Spiel beenden</button>
+                    <button type="button" id="showResultsBtn" class="hidden bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 px-8 py-3 rounded-xl font-bold transition-colors">Ergebnisse für alle zeigen</button>
+                </div>
+
+                <div id="submissionsContainer" class="hidden space-y-4">
+                    <h3 class="text-xl font-bold border-b border-slate-700 pb-2">Einsendungen der Teams</h3>
+                    <div id="submissionsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                 </div>
             </div>
         </section>
+
         <section id="noActiveSessionContainer" class="hidden">
-            <div class="bg-slate-800 rounded-2xl p-12 border border-slate-700 shadow-lg text-center">
+            <form id="createSessionForm" class="bg-slate-800 rounded-2xl p-6 md:p-12 border border-slate-700 shadow-lg text-center">
                 <h2 class="text-3xl font-bold mb-4">Keine aktive Session</h2>
                 <div class="flex flex-col items-center gap-8">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-2xl">
-                        <div class="bg-slate-700/30 p-6 rounded-2xl border border-slate-700 text-left">
-                            <label class="block text-xs font-black uppercase text-slate-500 mb-2 tracking-widest">1. Session-Einstellungen</label>
-                            <div class="flex items-center gap-4">
-                                <span class="text-sm text-slate-300">Max. Teams:</span>
-                                <input type="number" id="maxTeams" value="5" min="1" max="10" class="bg-slate-900 border border-slate-600 rounded-xl px-4 py-2 w-20 text-center font-bold">
-                            </div>
-                        </div>
+                    <fieldset class="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <legend class="sr-only">Art der Session</legend>
+                        <label class="block cursor-pointer">
+                            <input type="radio" name="sessionMode" id="modeBoard" value="board" checked class="peer sr-only">
+                            <span class="block h-full rounded-2xl border-2 border-slate-700 bg-slate-700/30 p-4 peer-checked:border-blue-500 peer-checked:bg-blue-600/20 peer-focus-visible:ring-2 peer-focus-visible:ring-blue-400">
+                                <span class="block text-xl font-black">Brettspiel</span>
+                                <span class="block text-sm text-slate-400">Die Klasse zieht gemeinsam über Hauptbrett und Welten.</span>
+                            </span>
+                        </label>
+                        <label class="block cursor-pointer">
+                            <input type="radio" name="sessionMode" id="modeClassic" value="classic" class="peer sr-only">
+                            <span class="block h-full rounded-2xl border-2 border-slate-700 bg-slate-700/30 p-4 peer-checked:border-blue-500 peer-checked:bg-blue-600/20 peer-focus-visible:ring-2 peer-focus-visible:ring-blue-400">
+                                <span class="block text-xl font-black">Einzelne Spielrunde</span>
+                                <span class="block text-sm text-slate-400">Feste Reihenfolge oder QR-Stationen, jedes Team für sich.</span>
+                            </span>
+                        </label>
+                    </fieldset>
 
-                        <div class="bg-slate-700/30 p-6 rounded-2xl border border-slate-700 text-left">
-                            <label class="block text-xs font-black uppercase text-slate-500 mb-2 tracking-widest">2. Spielrunden-Template wählen</label>
-                            <select id="blueprintSelect" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 font-bold text-blue-400 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
-                                <option value="">Bitte wählen...</option>
-                            </select>
+                    <div class="grid grid-cols-1 gap-4 w-full max-w-3xl text-left">
+                        <div class="bg-slate-700/30 p-6 rounded-2xl border border-slate-700">
+                            <label for="maxTeams" class="block text-xs font-black uppercase text-slate-400 mb-2 tracking-widest">1. Max. Teams</label>
+                            <input type="number" id="maxTeams" value="6" min="1" max="10" step="1" required class="bg-slate-900 border border-slate-600 rounded-xl px-4 py-2 w-20 text-center font-bold">
                         </div>
+                        <div id="classicSetup" class="hidden bg-slate-700/30 p-6 rounded-2xl border border-slate-700">
+                            <label for="blueprintSelect" class="block text-xs font-black uppercase text-slate-400 mb-2 tracking-widest">2. Spielrunde wählen</label>
+                            <select id="blueprintSelect" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 font-bold text-blue-400 outline-none focus:ring-2 focus:ring-blue-500 transition-all"></select>
+                        </div>
+                        <div id="boardSetup" class="space-y-6"></div>
                     </div>
 
-                    <div id="selectedTemplateInfo" class="hidden text-slate-400 text-sm italic">
-                        Dieses Template enthält <span id="taskCountDisplay" class="font-bold text-white">0</span> Aufgaben-Sequenzen.
-                    </div>
+                    <p id="selectedTemplateInfo" class="hidden text-slate-400 text-sm italic"></p>
 
-                    <button id="startSessionBtn" class="bg-blue-600 hover:bg-blue-700 px-12 py-5 rounded-2xl font-black text-2xl uppercase tracking-tighter shadow-2xl transition-all transform hover:scale-105 active:scale-95">
-                        Session mit Template starten
-                    </button>
+                    <button type="submit" id="startSessionBtn" class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 px-12 py-5 rounded-2xl font-black text-2xl uppercase tracking-tighter shadow-2xl transition-colors">Session starten</button>
 
-                    <p class="text-xs text-slate-500">Erstelle neue Templates im <a href="/blueprints.html" class="text-blue-500 underline">Blueprint Creator</a>.</p>
+                    <p class="text-xs text-slate-400">Neue Spielrunden und Kartensets erstellst du im <a href="/blueprints.html" class="text-blue-400 underline">Spielrunden-Editor</a>.</p>
                 </div>
-            </div>
+            </form>
         </section>
+
         <section>
             <h2 class="text-2xl font-bold mb-4 text-slate-300">Letzte Sessions</h2>
-            <div class="bg-slate-800 rounded-2xl overflow-hidden border border-slate-700 shadow-lg">
+            <div class="bg-slate-800 rounded-2xl overflow-x-auto border border-slate-700 shadow-lg">
                 <table class="w-full text-left border-collapse">
                     <thead class="bg-slate-700 text-slate-300">
                         <tr>
                             <th class="p-4">Datum</th>
                             <th class="p-4">Code</th>
-                            <th class="p-4">Max Teams</th>
+                            <th class="p-4">Spielrunde</th>
+                            <th class="p-4">Max. Teams</th>
                             <th class="p-4">Status</th>
-                            <th class="p-4">Details</th>
+                            <th class="p-4">Aktionen</th>
                         </tr>
                     </thead>
                     <tbody id="historyTableBody"></tbody>
@@ -159,19 +154,25 @@
             </div>
         </section>
     </main>
-    <div id="detailsModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-50">
-        <div class="bg-slate-800 p-8 rounded-2xl border border-slate-700 max-w-2xl w-full mx-4">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-bold" id="modalTitle">Session Details</h3>
-                <button onclick="document.getElementById('detailsModal').classList.add('hidden')" class="text-slate-400 hover:text-white">&times;</button>
+
+    <div id="qrSheet" class="hidden fixed inset-0 z-40 bg-slate-900 overflow-y-auto p-4 md:p-8" role="dialog" aria-modal="true" aria-labelledby="qrSheetTitle">
+        <div class="max-w-4xl mx-auto space-y-6">
+            <div class="flex flex-wrap justify-between items-center gap-3" data-no-print>
+                <p class="text-sm text-slate-400">Drucke diese QR-Codes aus oder zeige sie an den Stationen. Monster-Aufgaben haben keinen Code.</p>
+                <div class="flex gap-3">
+                    <button type="button" id="qrPrintBtn" class="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 px-6 py-2 rounded-xl text-sm font-bold transition-colors">Drucken</button>
+                    <button type="button" id="qrCloseBtn" class="bg-slate-700 hover:bg-slate-600 px-6 py-2 rounded-xl text-sm font-bold transition-colors">Schließen</button>
+                </div>
             </div>
-            <div id="modalContent" class="space-y-4"></div>
-            <div class="mt-8 text-right">
-                <button onclick="document.getElementById('detailsModal').classList.add('hidden')" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded">Schließen</button>
-            </div>
+            <h2 id="qrSheetTitle" class="text-2xl font-bold break-words"></h2>
+            <div id="qrSheetGrid" class="space-y-8"></div>
         </div>
     </div>
-    <script src="/js/ui.js"></script>
-    <script src="/js/teacher.js"></script>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/vendor/qrcode.min.js"></script>
+    <script src="/js/shared/task-types.js"></script>
+    <script src="/js/shared/game-rules.js"></script>
+    <script type="module" src="/js/teacher/main.js"></script>
 </body>
 </html>

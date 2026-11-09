@@ -1,116 +1,156 @@
 <!DOCTYPE html>
-<html lang="de" class="dark">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Schüler-Bereich - Weltenretter</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/css/app.css">
 </head>
-<body class="bg-slate-900 text-white min-h-screen flex items-center justify-center p-4">
-    <div class="bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-700 w-full max-w-lg">
-        <div id="joinPhase">
-            <h2 class="text-3xl font-bold mb-6 text-center text-blue-500">Session beitreten</h2>
-            <div class="space-y-4">
-                <input type="text" id="sessionCodeInput" placeholder="Session-Code" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-3 px-4 text-center text-2xl font-mono uppercase">
-                <div id="joinError" class="text-red-500 text-sm hidden text-center"></div>
-                <button id="joinBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl text-lg">Los geht's!</button>
+<body class="bg-slate-900 text-white min-h-screen flex justify-center p-2 sm:p-4">
+    <div class="w-full max-w-lg my-auto space-y-3">
+        <div id="connBanner" class="hidden bg-amber-900 border border-amber-500 text-amber-100 rounded-xl p-3 text-sm font-bold flex items-center justify-between gap-3" role="status">
+            <span id="connBannerText"></span>
+            <button id="connRetryBtn" type="button" class="hidden shrink-0 underline">Neu verbinden</button>
+        </div>
+
+        <header id="teamBar" class="hidden bg-slate-800 rounded-2xl border border-slate-700 p-3 flex items-center gap-3">
+            <span id="teamDot" class="w-5 h-5 rounded-full shrink-0" aria-hidden="true"></span>
+            <span id="teamBarName" class="font-bold truncate min-w-0 flex-1"></span>
+            <span class="text-xs text-slate-400 shrink-0">Team-Code <span id="teamBarCode" class="font-mono font-bold text-white text-sm"></span></span>
+            <button id="resultsBtn" type="button" class="hidden shrink-0 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-2 rounded-lg">Ergebnisse</button>
+        </header>
+
+        <main id="mainCard" class="bg-slate-800 p-4 sm:p-8 rounded-2xl shadow-2xl border border-slate-700">
+            <section id="screen-loading" class="text-center py-12 text-slate-400">Lade...</section>
+
+            <section id="screen-join" class="hidden">
+                <h2 class="text-3xl font-bold mb-6 text-center text-blue-500">Session beitreten</h2>
+                <form id="joinForm" class="space-y-4" novalidate>
+                    <input type="text" id="sessionCodeInput" placeholder="Session-Code" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12" aria-label="Session-Code" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-3 px-4 text-center text-2xl font-mono uppercase">
+                    <p id="joinError" class="text-red-400 text-sm hidden text-center" role="alert"></p>
+                    <button id="joinBtn" type="submit" class="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-xl text-lg">Los geht's!</button>
+                </form>
                 <div class="text-center mt-6">
-                    <button onclick="document.getElementById('joinPhase').classList.add('hidden'); document.getElementById('rejoinPhase').classList.remove('hidden');" class="text-slate-400 hover:text-white text-sm underline decoration-slate-600 underline-offset-4">Bestehendem Team wieder beitreten</button>
+                    <button id="showRejoinBtn" type="button" class="text-slate-400 hover:text-white text-sm underline underline-offset-4">Bestehendem Team wieder beitreten</button>
                 </div>
-            </div>
-        </div>
-        <div id="rejoinPhase" class="hidden">
-            <h2 class="text-3xl font-bold mb-6 text-center text-blue-500">Wieder beitreten</h2>
-            <div class="space-y-4">
-                <p class="text-sm text-slate-400 text-center">Gib den Team-Code ein, den du von deiner Lehrkraft erhalten hast.</p>
-                <input type="text" id="teamCodeInput" placeholder="Team-Code" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-3 px-4 text-center text-2xl font-mono uppercase">
-                <div id="rejoinError" class="text-red-500 text-sm hidden text-center"></div>
-                <button id="rejoinBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl text-lg">Wieder beitreten</button>
+            </section>
+
+            <section id="screen-rejoin" class="hidden">
+                <h2 class="text-3xl font-bold mb-6 text-center text-blue-500">Wieder beitreten</h2>
+                <form id="rejoinForm" class="space-y-4" novalidate>
+                    <p class="text-sm text-slate-400 text-center">Gib euren Team-Code ein. Er steht oben auf dem Bildschirm eures Teams, und eure Lehrkraft kennt ihn auch.</p>
+                    <input type="text" id="teamCodeInput" placeholder="Team-Code" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12" aria-label="Team-Code" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-3 px-4 text-center text-2xl font-mono uppercase">
+                    <p id="rejoinError" class="text-red-400 text-sm hidden text-center" role="alert"></p>
+                    <button id="rejoinBtn" type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-xl text-lg">Wieder beitreten</button>
+                </form>
                 <div class="text-center mt-4">
-                    <button onclick="document.getElementById('rejoinPhase').classList.add('hidden'); document.getElementById('joinPhase').classList.remove('hidden');" class="text-slate-400 hover:text-white text-sm">Zurück</button>
+                    <button id="showJoinBtn" type="button" class="text-slate-400 hover:text-white text-sm">Zurück</button>
                 </div>
-            </div>
-        </div>
-        <div id="createTeamPhase" class="hidden">
-            <h2 class="text-3xl font-bold mb-6 text-center text-blue-500">Team erstellen</h2>
-            <div class="space-y-6">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-2">Teamname</label>
-                        <input type="text" id="teamNameInput" maxlength="20" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
+            </section>
+
+            <section id="screen-createTeam" class="hidden">
+                <h2 class="text-3xl font-bold mb-6 text-center text-blue-500">Team erstellen</h2>
+                <form id="createTeamForm" class="space-y-6" novalidate>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="teamNameInput" class="block text-sm font-medium text-slate-400 mb-2">Teamname</label>
+                            <input type="text" id="teamNameInput" maxlength="30" autocomplete="off" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
+                        </div>
+                        <div>
+                            <label for="groupSizeInput" class="block text-sm font-medium text-slate-400 mb-2">Gruppengröße (max. 10)</label>
+                            <input type="number" id="groupSizeInput" value="1" min="1" max="10" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
+                        </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-2">Gruppengröße (max. 10)</label>
-                        <input type="number" id="groupSizeInput" value="1" min="1" max="10" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
+                        <span class="block text-sm text-slate-400 mb-3">Teamfarbe</span>
+                        <div class="grid grid-cols-5 gap-4" id="colorPicker"></div>
                     </div>
+                    <p id="createTeamNotice" class="hidden text-sm text-blue-300 text-center"></p>
+                    <p id="createTeamError" class="text-red-400 text-sm hidden text-center" role="alert"></p>
+                    <button id="createTeamBtn" type="submit" class="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-xl text-lg">Start!</button>
+                </form>
+                <div class="flex flex-col items-center gap-3 mt-6">
+                    <button id="createTeamRejoinBtn" type="button" class="text-slate-400 hover:text-white text-sm underline underline-offset-4">Bestehendem Team wieder beitreten</button>
+                    <button id="createTeamBackBtn" type="button" class="text-slate-400 hover:text-white text-sm">Zurück</button>
                 </div>
-                <div>
-                    <label class="block text-sm text-slate-400 mb-3">Teamfarbe</label>
-                    <div class="grid grid-cols-5 gap-4" id="colorPicker"></div>
+            </section>
+
+            <section id="screen-lobby" class="hidden text-center space-y-6 py-8">
+                <h2 class="text-3xl font-bold text-blue-400">Team bereit!</h2>
+                <div id="teamSummary" class="bg-slate-700 p-6 rounded-2xl inline-block text-left border border-slate-600 shadow-xl max-w-full"></div>
+                <p id="lobbyNotice" class="text-slate-300 font-bold"></p>
+                <p class="text-xs text-slate-400">Merkt euch euren Team-Code. Damit kommt ihr jederzeit wieder ins Spiel.</p>
+            </section>
+
+            <section id="screen-qr" class="hidden space-y-6 py-2">
+                <h2 id="qrTitle" class="text-3xl font-black text-blue-500 uppercase tracking-tighter text-center">Nächste Station</h2>
+                <p id="qrHint" class="hidden text-sm font-bold text-slate-300 text-center"></p>
+                <div id="qr-reader" class="rounded-[2.5rem] overflow-hidden border-4 border-slate-700 bg-black aspect-square flex items-center"></div>
+                <div id="cameraStatus" class="hidden bg-amber-500/20 border border-amber-500/50 text-amber-200 rounded-xl p-3 text-sm font-bold space-y-2" role="alert">
+                    <p id="cameraStatusText"></p>
+                    <button id="cameraRetryBtn" type="button" class="underline">Kamera erneut versuchen</button>
                 </div>
-                <div id="createTeamError" class="text-red-500 text-sm hidden text-center"></div>
-                <button id="createTeamBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl text-lg">Start!</button>
-            </div>
-        </div>
-        <div id="waitingPhase" class="hidden text-center space-y-6 py-12">
-            <h2 class="text-3xl font-bold text-blue-400">Team bereit!</h2>
-            <div id="teamSummary" class="bg-slate-700 p-6 rounded-2xl inline-block text-left border border-slate-600 shadow-xl"></div>
-        </div>
-
-        <!-- QR Phase -->
-        <div id="qrPhase" class="hidden space-y-6 py-4">
-            <h2 class="text-3xl font-black text-blue-500 uppercase tracking-tighter text-center">Nächste Station</h2>
-            <div id="qr-reader" class="rounded-[2.5rem] overflow-hidden border-4 border-slate-700 bg-black aspect-square"></div>
-            <div class="relative">
-                <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                    <span class="text-slate-500 font-bold">#</span>
+                <form id="manualCodeForm" class="space-y-3" novalidate>
+                    <input type="text" id="manualCodeInput" placeholder="Oder Code eingeben..." autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="64" aria-label="Code" class="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl py-4 px-6 outline-none focus:border-blue-500 transition-all font-black text-xl tracking-widest text-center">
+                    <p id="qrError" class="text-red-400 text-sm hidden text-center" role="alert"></p>
+                    <button id="manualCodeBtn" type="submit" class="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-black py-4 rounded-2xl shadow-xl transition-all active:scale-95 uppercase tracking-widest">Start</button>
+                </form>
+                <div id="stationSection">
+                    <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-3">Eure Stationen</h3>
+                    <p id="stationCount" class="text-xs text-slate-400 mb-2"></p>
+                    <ul id="stationList" class="space-y-2"></ul>
                 </div>
-                <input type="text" id="manualCodeInput" placeholder="Oder Code eingeben..." class="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl py-4 pl-10 pr-6 outline-none focus:border-blue-500 transition-all font-black text-xl tracking-widest text-center">
-            </div>
-            <button onclick="handleManualCode()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl shadow-xl transition-all transform active:scale-95 uppercase tracking-widest">START</button>
-        </div>
+                <button id="finishStationsBtn" type="button" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl">Stationen beenden</button>
+            </section>
 
-        <!-- Game Phase -->
-        <div id="gamePhase" class="hidden text-center space-y-6 py-4">
-            <div id="gameContent" class="transition-all duration-500 opacity-100">
-                <!-- Content will be injected by student.js -->
-            </div>
+            <section id="screen-task" class="hidden text-center space-y-6 py-2">
+                <div id="taskHeader"></div>
+                <div id="taskMount"></div>
+                <div id="taskStatus" class="hidden space-y-3" role="status"></div>
+                <div class="bg-slate-700/30 p-4 rounded-xl border border-slate-600/50">
+                    <p class="text-xs text-slate-400 italic">Eure Lehrkraft sieht euren Fortschritt im Dashboard.</p>
+                </div>
+            </section>
 
-            <div class="bg-slate-700/30 p-4 rounded-xl border border-slate-600/50">
-                <p class="text-xs text-slate-400 italic">Eure Lehrkraft sieht euren Fortschritt im Dashboard.</p>
-            </div>
-        </div>
+            <section id="screen-board" class="hidden">
+                <div id="boardPhase" role="status"></div>
+            </section>
 
-        <style>
-            .swipe-card {
-                transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.3s;
-                cursor: grab;
-            }
-            .swipe-card:active {
-                cursor: grabbing;
-            }
-            .swipe-left { transform: translateX(-150%) rotate(-20deg) !important; opacity: 0; }
-            .swipe-right { transform: translateX(150%) rotate(20deg) !important; opacity: 0; }
+            <section id="screen-finished" class="hidden text-center space-y-6 py-12">
+                <div class="text-7xl" aria-hidden="true">🏆</div>
+                <h2 class="text-3xl font-bold text-blue-400">Super!</h2>
+                <p id="finishedText" class="text-slate-300 font-bold"></p>
+                <p class="text-sm text-slate-400">Wartet auf eure Lehrkraft.</p>
+            </section>
 
-            @keyframes bounce-in {
-                0% { transform: scale(0.3); opacity: 0; }
-                50% { transform: scale(1.05); opacity: 1; }
-                70% { transform: scale(0.9); }
-                100% { transform: scale(1); }
-            }
-            .animate-bounce-in { animation: bounce-in 0.6s both; }
+            <section id="screen-results" class="hidden space-y-8 py-4">
+                <h2 class="text-4xl font-black text-blue-500 uppercase tracking-tighter italic text-center">Abschluss</h2>
+                <div id="resultsList" class="grid grid-cols-1 gap-4"></div>
+                <button id="resultsBackBtn" type="button" class="w-full bg-slate-800 p-4 rounded-2xl font-bold border border-slate-700 text-slate-300">Zurück</button>
+            </section>
 
-            @keyframes shake {
-                0%, 100% { transform: translateX(0); }
-                25% { transform: translateX(-10px); }
-                75% { transform: translateX(10px); }
-            }
-            .shake { animation: shake 0.3s; }
-        </style>
+            <section id="screen-ended" class="hidden text-center space-y-6 py-12">
+                <div id="endedIcon" class="text-7xl" aria-hidden="true"></div>
+                <h2 id="endedTitle" class="text-3xl font-bold text-blue-400"></h2>
+                <p id="endedText" class="text-slate-300"></p>
+                <button id="restartBtn" type="button" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-xl text-lg">Zurück zum Start</button>
+            </section>
+
+            <div id="boardPanel" class="hidden mt-4"></div>
+        </main>
+
+        <p id="privacyNote" class="text-xs text-slate-500 text-center px-4">Fotos sehen nur eure Lehrkraft und die Teams eurer Session. Eure Lehrkraft kann sie jederzeit löschen.</p>
     </div>
+
+    <div id="toast" class="hidden fixed bottom-4 left-4 right-4 z-50 flex justify-center pointer-events-none" role="status">
+        <p id="toastText" class="bg-slate-950 border border-slate-600 text-white font-bold px-5 py-3 rounded-2xl shadow-2xl max-w-md text-center"></p>
+    </div>
+
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/ui.js"></script>
-    <script src="/js/student.js"></script>
+    <script src="/js/shared/task-types.js"></script>
+    <script src="/js/shared/game-rules.js"></script>
+    <script src="/vendor/html5-qrcode.min.js"></script>
+    <script type="module" src="/js/student/main.js"></script>
 </body>
 </html>

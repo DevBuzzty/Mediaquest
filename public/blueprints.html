@@ -1,114 +1,115 @@
 <!DOCTYPE html>
-<html lang="de" class="dark">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blueprint Creator - Weltenretter</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <title>Spielrunden-Editor - Weltenretter</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/css/app.css">
 </head>
 <body class="bg-slate-900 text-white min-h-screen">
-    <nav class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex justify-between items-center">
-        <div class="flex items-center gap-4">
-            <h1 class="text-2xl font-bold text-blue-500">Blueprint Creator</h1>
+    <nav class="bg-slate-800 border-b border-slate-700 px-4 sm:px-6 py-4 flex flex-wrap justify-between items-center gap-3">
+        <div class="flex flex-wrap items-center gap-4">
+            <h1 class="text-2xl font-bold text-blue-500">Spielrunden-Editor</h1>
             <a href="/teacher.html" class="text-slate-400 hover:text-white text-sm">Zurück zum Dashboard</a>
         </div>
         <span id="teacherUsername" class="text-slate-300"></span>
     </nav>
 
-    <main class="max-w-[1600px] mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <!-- Left: Templates -->
-        <aside class="lg:col-span-3 space-y-4">
-            <button onclick="createNewTemplate()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl shadow-lg transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3 mb-6">
-                <span class="text-2xl">+</span> NEUE SPIELRUNDE
+    <main class="max-w-[1600px] mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <aside id="blueprintSidebar" class="lg:col-span-3 space-y-4">
+            <button id="newBlueprintButton" type="button" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl shadow-lg flex items-center justify-center gap-3">
+                <span class="text-2xl" aria-hidden="true">+</span> NEUE SPIELRUNDE
             </button>
 
-            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl space-y-4">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-xl font-bold text-slate-300">Deine Templates</h2>
-                    <div class="flex gap-1">
-                        <button onclick="document.getElementById('importFile').click()" class="p-2 hover:bg-slate-700 rounded-lg text-slate-400" title="Importieren">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                            </svg>
-                        </button>
-                        <input type="file" id="importFile" class="hidden" accept=".json" onchange="importBlueprint(this)">
-                    </div>
+            <div class="bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-700 space-y-4">
+                <div class="flex justify-between items-center gap-2">
+                    <h2 class="text-xl font-bold text-slate-300">Deine Spielrunden</h2>
+                    <button id="importButton" type="button" class="px-3 min-h-[2.75rem] hover:bg-slate-700 rounded-lg text-slate-300 text-sm font-bold">Importieren</button>
+                    <input id="importFile" type="file" class="hidden" accept=".json,application/json" aria-label="Spielrunde importieren">
                 </div>
-                <div id="blueprintList" class="space-y-2 max-h-[600px] overflow-y-auto pr-2">
-                    <!-- List injected by JS -->
-                </div>
+                <div id="blueprintList" class="space-y-2 lg:max-h-[600px] lg:overflow-y-auto"></div>
             </div>
         </aside>
 
-        <!-- Center: Template Editor -->
         <section class="lg:col-span-6 space-y-6">
-            <div id="editorPlaceholder" class="bg-slate-800/50 p-12 rounded-3xl border-2 border-dashed border-slate-700 flex flex-col items-center justify-center text-center opacity-50 h-full min-h-[600px]">
-                <div class="w-24 h-24 bg-slate-700 rounded-full flex items-center justify-center mb-6">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                    </svg>
-                </div>
-                <h3 class="text-2xl font-bold text-slate-400">Kein Template gewählt</h3>
-                <p class="text-slate-500 mt-2">Klicke links auf "Neue Spielrunde" oder wähle ein bestehendes Template aus.</p>
+            <div id="editorPlaceholder" class="bg-slate-800/50 p-12 rounded-3xl border-2 border-dashed border-slate-700 flex flex-col items-center justify-center text-center min-h-[320px]">
+                <h3 class="text-2xl font-bold text-slate-400">Keine Spielrunde gewählt</h3>
+                <p class="text-slate-500 mt-2">Klicke auf „Neue Spielrunde“ oder wähle eine bestehende Spielrunde aus.</p>
             </div>
 
-            <div id="editorContainer" class="hidden space-y-6">
-                <div class="bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-2xl">
-                    <div class="flex justify-between items-start mb-8 border-b border-slate-700 pb-6">
+            <div id="editorContainer" class="hidden">
+                <div class="bg-slate-800 p-4 sm:p-8 rounded-3xl border border-slate-700">
+                    <div class="flex flex-wrap justify-between items-start gap-4 mb-6 border-b border-slate-700 pb-6">
                         <div>
-                            <h2 class="text-3xl font-black text-blue-500 uppercase tracking-tighter">Template Editor</h2>
-                            <p class="text-slate-400 text-sm">Stelle deine Minispiele für eine Spielrunde zusammen</p>
+                            <h2 class="text-3xl font-black text-blue-500 uppercase tracking-tighter">Spielrunde bearbeiten</h2>
+                            <p class="text-slate-400 text-sm">Stelle die Aufgaben für eine Spielrunde zusammen</p>
+                            <p id="dirtyBadge" class="hidden text-amber-400 text-sm font-bold mt-1">Ungespeicherte Änderungen</p>
                         </div>
                         <div class="flex gap-3">
-                            <button onclick="cancelEditor()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold px-6 py-3 rounded-2xl transition-all">ABBRECHEN</button>
-                            <button onclick="saveBlueprint()" class="bg-green-600 hover:bg-green-500 text-white font-black px-8 py-3 rounded-2xl shadow-lg transition-all transform hover:scale-105 active:scale-95">
-                                SPEICHERN
-                            </button>
+                            <button id="cancelButton" type="button" class="bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold px-6 py-3 rounded-2xl">ABBRECHEN</button>
+                            <button id="saveButton" type="button" class="bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-black px-8 py-3 rounded-2xl">SPEICHERN</button>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                        <div class="space-y-4">
-                            <label class="block text-xs font-bold uppercase text-slate-500 tracking-widest ml-1">Name der Spielrunde</label>
-                            <input type="text" id="blueprintTitle" placeholder="z.B. Stationenlernen: Social Media" class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 px-6 focus:ring-4 focus:ring-blue-500/20 outline-none text-xl font-bold">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="blueprintTitle" class="block text-xs font-bold uppercase text-slate-400 tracking-wide mb-2">Name der Spielrunde</label>
+                            <input id="blueprintTitle" type="text" maxlength="120" placeholder="z. B. Stationenlernen: Social Media" class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 px-6 outline-none focus:ring-2 focus:ring-blue-500 text-xl font-bold">
+                            <p id="titleError" class="hidden text-sm text-red-300 mt-2" role="alert"></p>
                         </div>
-                        <div class="space-y-4">
-                            <label class="block text-xs font-bold uppercase text-slate-500 tracking-widest ml-1">Ablauf-Typ</label>
-                            <div class="flex gap-2 p-1 bg-slate-900 rounded-2xl border border-slate-700 h-[68px]">
-                                <button id="type-normal" onclick="setTemplateType('normal')" class="flex-1 rounded-xl font-bold text-sm transition-all bg-blue-600 text-white">SEQUENTIELL</button>
-                                <button id="type-qr" onclick="setTemplateType('qr')" class="flex-1 rounded-xl font-bold text-sm transition-all text-slate-500 hover:text-slate-300">QR-CODES</button>
+                        <div>
+                            <span class="block text-xs font-bold uppercase text-slate-400 tracking-wide mb-2">Ablauf</span>
+                            <div class="flex gap-2 p-1 bg-slate-900 rounded-2xl border border-slate-700 h-[68px]" role="group" aria-label="Ablauf der Spielrunde">
+                                <button id="modeNormal" type="button" class="flex-1 rounded-xl font-bold text-sm">FESTE REIHENFOLGE</button>
+                                <button id="modeQr" type="button" class="flex-1 rounded-xl font-bold text-sm">QR-STATIONEN</button>
+                                <button id="modeWorld" type="button" class="flex-1 rounded-xl font-bold text-sm">WELT-KARTENSET</button>
                             </div>
                         </div>
                     </div>
 
-                    <div id="tasksList" class="space-y-12">
-                        <!-- Tasks injected here -->
+                    <div id="worldRow" class="hidden mb-6">
+                        <label for="worldSelect" class="block text-xs font-bold uppercase text-slate-400 tracking-wide mb-2">Welt des Kartensets</label>
+                        <select id="worldSelect" class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 px-6 outline-none focus:ring-2 focus:ring-blue-500 font-bold"></select>
                     </div>
 
-                    <div class="pt-8 border-t border-slate-700 mt-8">
-                        <button onclick="addTask()" class="w-full py-6 rounded-3xl border-2 border-dashed border-slate-700 text-slate-400 hover:border-blue-500 hover:text-blue-400 transition-all font-bold flex items-center justify-center gap-3 group">
-                            <span class="text-3xl transition-transform group-hover:scale-125">+</span> Minispiel zur Runde hinzufügen
-                        </button>
+                    <ul id="generalErrors" class="hidden text-sm text-red-300 bg-red-500/10 border border-red-500/40 rounded-xl p-3 space-y-1 mb-6" role="status"></ul>
+
+                    <div id="tasksList" class="space-y-6"></div>
+
+                    <div class="pt-6 border-t border-slate-700 mt-6">
+                        <button id="addTaskButton" type="button" class="w-full py-6 rounded-3xl border-2 border-dashed border-slate-700 text-slate-400 hover:border-blue-500 hover:text-blue-400 font-bold">+ Aufgabe zur Spielrunde hinzufügen</button>
+                    </div>
+
+                    <div id="monsterSection" class="hidden pt-6 border-t border-slate-700 mt-6 space-y-6">
+                        <div>
+                            <h3 class="text-xl font-black text-purple-300">Monster-Aufgaben</h3>
+                            <p class="text-sm text-slate-400">Immer genau drei, fest auf den Feldern 8, 16 und 24. Sie haben keinen Code und werden nicht gescannt.</p>
+                        </div>
+                        <div id="monsterList" class="space-y-6"></div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Right: Preview -->
-        <section class="lg:col-span-3 space-y-6">
-            <div class="sticky top-6">
+        <section class="lg:col-span-3" aria-label="Vorschau">
+            <div class="lg:sticky lg:top-6">
                 <h2 class="text-xl font-bold mb-4 text-green-400">Live-Vorschau</h2>
-                <div class="bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-2xl min-h-[600px] flex flex-col items-center justify-center relative overflow-hidden">
-                    <div id="previewContainer" class="w-full max-w-sm text-center">
-                        <!-- Preview content -->
+                <div class="bg-slate-800 p-4 rounded-3xl border border-slate-700 min-h-[320px]">
+                    <div id="previewPager" class="hidden flex items-center justify-between gap-2 mb-4">
+                        <button id="previewPrev" type="button" class="w-11 h-11 rounded-lg bg-slate-700 hover:bg-slate-600 disabled:opacity-40 font-bold" aria-label="Vorherige Aufgabe">‹</button>
+                        <span id="previewLabel" class="text-xs text-slate-400 font-bold uppercase tracking-wide text-center"></span>
+                        <button id="previewNext" type="button" class="w-11 h-11 rounded-lg bg-slate-700 hover:bg-slate-600 disabled:opacity-40 font-bold" aria-label="Nächste Aufgabe">›</button>
                     </div>
+                    <div id="previewContainer" class="w-full"></div>
                 </div>
             </div>
         </section>
     </main>
 
-    <script src="/js/ui.js"></script>
-    <script src="/js/blueprints.js"></script>
+    <script src="/js/shared/task-types.js"></script>
+    <script src="/js/shared/game-rules.js"></script>
+    <script src="/vendor/qrcode.min.js"></script>
+    <script type="module" src="/js/editor/main.js"></script>
 </body>
 </html>

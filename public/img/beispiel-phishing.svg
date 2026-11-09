@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" font-family="Arial, Helvetica, sans-serif">
+  <rect width="1600" height="900" fill="#e2e8f0"/>
+  <rect x="120" y="60" width="1360" height="780" rx="24" fill="#ffffff" stroke="#94a3b8" stroke-width="4"/>
+  <text x="180" y="150" font-size="44" font-weight="bold" fill="#0f172a">Dein Konto wird gesperrt!!!</text>
+  <text x="180" y="225" font-size="32" fill="#475569">Von:</text>
+  <text x="260" y="225" font-size="32" fill="#b91c1c">sicherheit@bank-konto-login.example</text>
+  <line x1="180" y1="265" x2="1420" y2="265" stroke="#cbd5e1" stroke-width="3"/>
+  <text x="180" y="340" font-size="34" fill="#0f172a">Hallo lieber Kunde,</text>
+  <text x="180" y="405" font-size="34" fill="#0f172a">dein Konto wird in 24 Stunden gelöscht, wenn du nicht reagierst.</text>
+  <text x="180" y="470" font-size="34" fill="#0f172a">Bitte bestätige sofort dein Passwort und deine Kartennummer:</text>
+  <rect x="180" y="530" width="620" height="110" rx="16" fill="#dc2626"/>
+  <text x="490" y="600" font-size="38" font-weight="bold" fill="#ffffff" text-anchor="middle">JETZT HIER KLICKEN</text>
+  <text x="180" y="730" font-size="30" fill="#64748b">Mit freundlichen Grüßen</text>
+  <text x="180" y="780" font-size="30" fill="#64748b">Ihre Sicherheits-Abteilung</text>
+</svg>

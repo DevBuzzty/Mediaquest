@@ -1,0 +1,81 @@
+/*
+ * Druckansicht der QR-Codes. Gilt nur, solange der QR-Bogen geöffnet ist (body.qr-sheet-open).
+ * Eigene Datei statt Tailwind-Klassen: das Layout ist auf Papier ausgelegt.
+ */
+@page {
+    size: A4;
+    margin: 12mm;
+}
+
+body.qr-sheet-open {
+    background: #fff !important;
+    color: #000 !important;
+    min-height: 0 !important;
+}
+
+body.qr-sheet-open > *:not(#qrSheet) {
+    display: none !important;
+}
+
+body.qr-sheet-open #qrSheet {
+    position: static !important;
+    display: block !important;
+    overflow: visible !important;
+    background: #fff !important;
+    color: #000 !important;
+    padding: 0 !important;
+}
+
+body.qr-sheet-open #qrSheet > div {
+    max-width: none !important;
+}
+
+body.qr-sheet-open [data-no-print] {
+    display: none !important;
+}
+
+body.qr-sheet-open #qrSheetTitle {
+    color: #000 !important;
+    font-size: 16pt;
+    margin: 0 0 6mm;
+}
+
+body.qr-sheet-open .qr-section + .qr-section {
+    break-before: page;
+    page-break-before: always;
+}
+
+body.qr-sheet-open .qr-section-title {
+    color: #000 !important;
+    font-size: 14pt;
+    margin: 0 0 5mm;
+}
+
+body.qr-sheet-open .qr-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8mm !important;
+}
+
+body.qr-sheet-open .qr-card {
+    background: #fff !important;
+    color: #000 !important;
+    border: 1px solid #000 !important;
+    border-radius: 4mm !important;
+    box-shadow: none !important;
+    padding: 5mm !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+body.qr-sheet-open .qr-card * {
+    color: #000 !important;
+}
+
+body.qr-sheet-open .qr-card img {
+    width: 60mm !important;
+    height: 60mm !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    image-rendering: pixelated;
+}

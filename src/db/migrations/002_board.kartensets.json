@@ -1,0 +1,1400 @@
+[
+ {
+  "title": "Allgemeines Spielbrett: Beispielkarten",
+  "world": "haupt",
+  "tasks": [
+   {
+    "type": "binary",
+    "question": "Darf man jedes Foto aus dem Netz einfach weiterschicken?",
+    "description": "Wische nach rechts für Ja, nach links für Nein.",
+    "icon": "📷",
+    "correct": "left",
+    "code": "HAUPT-01"
+   },
+   {
+    "type": "choice",
+    "question": "Was gehört in ein sicheres Passwort?",
+    "description": "Wähle die beste Antwort.",
+    "options": [
+     "Der eigene Vorname",
+     "Eine lange Mischung aus Zeichen",
+     "Das Geburtsdatum"
+    ],
+    "correct": 1,
+    "code": "HAUPT-02"
+   },
+   {
+    "type": "select",
+    "question": "Welche Daten solltest du für dich behalten?",
+    "description": "Markiere alle richtigen Antworten.",
+    "options": [
+     "Adresse",
+     "Lieblingsfarbe",
+     "Passwort",
+     "Telefonnummer"
+    ],
+    "correct": [
+     0,
+     2,
+     3
+    ],
+    "code": "HAUPT-03"
+   },
+   {
+    "type": "bucket",
+    "question": "Privat oder öffentlich?",
+    "description": "Ordne die Begriffe zu.",
+    "buckets": [
+     "Privat",
+     "Öffentlich"
+    ],
+    "items": [
+     {
+      "text": "Passwort",
+      "target": 0
+     },
+     {
+      "text": "Hausnummer",
+      "target": 0
+     },
+     {
+      "text": "Schulname der Stadtverwaltung",
+      "target": 1
+     },
+     {
+      "text": "Busfahrplan",
+      "target": 1
+     }
+    ],
+    "code": "HAUPT-04"
+   },
+   {
+    "type": "ranking",
+    "question": "Bringe in die richtige Reihenfolge: Du bekommst eine seltsame Nachricht.",
+    "description": "Der erste Schritt steht oben.",
+    "items": [
+     "Nicht antworten",
+     "Einen Screenshot machen",
+     "Einer erwachsenen Person zeigen",
+     "Absender blockieren"
+    ],
+    "code": "HAUPT-05"
+   },
+   {
+    "type": "pairs",
+    "question": "Finde die Paare.",
+    "description": "Was gehört zusammen?",
+    "pairs": [
+     {
+      "left": "Link",
+      "right": "Verweis"
+     },
+     {
+      "left": "Spam",
+      "right": "Werbemüll"
+     },
+     {
+      "left": "Upload",
+      "right": "Hochladen"
+     }
+    ],
+    "code": "HAUPT-06"
+   },
+   {
+    "type": "cloze",
+    "question": "Ergänze die Regeln.",
+    "description": "Fülle die Lücken.",
+    "text": "Ein gutes [Passwort] verrate ich [niemandem].",
+    "fakes": [
+     "Foto",
+     "allen"
+    ],
+    "code": "HAUPT-07"
+   },
+   {
+    "type": "chat",
+    "question": "Eine fremde Person schreibt dich an.",
+    "description": "Reagiere richtig.",
+    "partner": "Fremder42",
+    "nodes": {
+     "start": {
+      "text": "Hi! Wie heißt deine Schule?",
+      "options": [
+       {
+        "label": "Sag ich nicht.",
+        "next": "ende1"
+       },
+       {
+        "label": "Die Lindenschule!",
+        "next": "ende2"
+       }
+      ]
+     },
+     "ende1": {
+      "text": "Schade.",
+      "options": [],
+      "success": true
+     },
+     "ende2": {
+      "text": "Danke, das merke ich mir.",
+      "options": []
+     }
+    },
+    "code": "HAUPT-08"
+   },
+   {
+    "type": "scroller",
+    "question": "Markiere alle problematischen Posts.",
+    "description": "Tippe auf die Beiträge.",
+    "posts": [
+     {
+      "user": "Gewinn24",
+      "text": "Du hast gewonnen! Klick hier!",
+      "isBad": true
+     },
+     {
+      "user": "Hater",
+      "text": "Du bist so dumm!",
+      "isBad": true
+     },
+     {
+      "user": "Bot7",
+      "text": "Gib hier deine Kontodaten ein.",
+      "isBad": true
+     },
+     {
+      "user": "Fake_Promi",
+      "text": "Schick mir dein Passwort für Fan-Geschenke.",
+      "isBad": true
+     },
+     {
+      "user": "Mia",
+      "text": "Heute Fußball im Park, wer kommt mit?",
+      "isBad": false
+     },
+     {
+      "user": "Stadtbibliothek",
+      "text": "Am Freitag ist Vorlesenachmittag.",
+      "isBad": false
+     },
+     {
+      "user": "Oma_Gerda",
+      "text": "Der Apfelkuchen ist gelungen!",
+      "isBad": false
+     },
+     {
+      "user": "SportAG",
+      "text": "Training fällt nächste Woche aus.",
+      "isBad": false
+     },
+     {
+      "user": "Tierheim",
+      "text": "Bello sucht ein neues Zuhause.",
+      "isBad": false
+     },
+     {
+      "user": "Wetterdienst",
+      "text": "Morgen wird es sonnig.",
+      "isBad": false
+     }
+    ],
+    "code": "HAUPT-09"
+   },
+   {
+    "type": "statement",
+    "question": "Was ist deine wichtigste Regel im Netz?",
+    "description": "Schreibt einen Satz.",
+    "code": "HAUPT-10"
+   },
+   {
+    "type": "photo",
+    "question": "Macht ein Gruppenfoto mit eurer Karte.",
+    "description": "Achtet darauf, dass nur ihr zu sehen seid.",
+    "code": "HAUPT-11"
+   },
+   {
+    "type": "monster",
+    "question": "[Platzhalter] Monster 1: Nennt gemeinsam drei Regeln für gutes Verhalten im Netz.",
+    "description": "Beispieltext, bitte im Editor durch eure eigene Monster-Aufgabe ersetzen.",
+    "image": ""
+   },
+   {
+    "type": "monster",
+    "question": "[Platzhalter] Monster 2: Zeigt der Klasse in einer Pantomime, was ein sicheres Passwort ausmacht.",
+    "description": "Beispieltext, bitte im Editor durch eure eigene Monster-Aufgabe ersetzen.",
+    "image": ""
+   },
+   {
+    "type": "monster",
+    "question": "[Platzhalter] Endboss: Erklärt der Lehrkraft, was ihr im Spiel über das Netz gelernt habt.",
+    "description": "Beispieltext, bitte im Editor durch eure eigene Monster-Aufgabe ersetzen.",
+    "image": ""
+   }
+  ]
+ },
+ {
+  "title": "News Arena: Beispielkarten",
+  "world": "news",
+  "tasks": [
+   {
+    "type": "binary",
+    "question": "Ist eine Nachricht wahr, nur weil sie oft geteilt wird?",
+    "description": "Rechts für Ja, links für Nein.",
+    "icon": "📰",
+    "correct": "left",
+    "code": "NEWS-01"
+   },
+   {
+    "type": "choice",
+    "question": "Woran erkennst du eine seriöse Nachrichtenseite?",
+    "description": "Wähle die beste Antwort.",
+    "options": [
+     "Viele bunte Banner",
+     "Impressum und genannte Quellen",
+     "Großbuchstaben in der Überschrift"
+    ],
+    "correct": 1,
+    "code": "NEWS-02"
+   },
+   {
+    "type": "select",
+    "question": "Was hilft beim Prüfen einer Nachricht?",
+    "description": "Markiere alle richtigen Antworten.",
+    "options": [
+     "Andere Quellen vergleichen",
+     "Datum prüfen",
+     "Nur die Überschrift lesen",
+     "Autor nachschlagen"
+    ],
+    "correct": [
+     0,
+     1,
+     3
+    ],
+    "code": "NEWS-03"
+   },
+   {
+    "type": "bucket",
+    "question": "Fakt oder Meinung?",
+    "description": "Ordne zu.",
+    "buckets": [
+     "Fakt",
+     "Meinung"
+    ],
+    "items": [
+     {
+      "text": "Berlin ist die Hauptstadt.",
+      "target": 0
+     },
+     {
+      "text": "Pizza schmeckt am besten.",
+      "target": 1
+     },
+     {
+      "text": "Das Spiel endete 2:1.",
+      "target": 0
+     },
+     {
+      "text": "Der Film war langweilig.",
+      "target": 1
+     }
+    ],
+    "code": "NEWS-04"
+   },
+   {
+    "type": "ranking",
+    "question": "So entsteht eine gute Nachricht.",
+    "description": "Der erste Schritt steht oben.",
+    "items": [
+     "Thema finden",
+     "Quellen prüfen",
+     "Text schreiben",
+     "Veröffentlichen"
+    ],
+    "code": "NEWS-05"
+   },
+   {
+    "type": "pairs",
+    "question": "Finde die Paare.",
+    "description": "Begriff und Bedeutung.",
+    "pairs": [
+     {
+      "left": "Clickbait",
+      "right": "Reißerische Überschrift"
+     },
+     {
+      "left": "Quelle",
+      "right": "Herkunft der Information"
+     },
+     {
+      "left": "Deepfake",
+      "right": "Gefälschtes Video"
+     }
+    ],
+    "code": "NEWS-06"
+   },
+   {
+    "type": "cloze",
+    "question": "Ergänze den Satz.",
+    "description": "Fülle die Lücken.",
+    "text": "Vor dem Teilen prüfe ich die [Quelle] und das [Datum].",
+    "fakes": [
+     "Farbe",
+     "Likes"
+    ],
+    "code": "NEWS-07"
+   },
+   {
+    "type": "chat",
+    "question": "Dein Freund schickt eine Eilmeldung.",
+    "description": "Reagiere richtig.",
+    "partner": "Ben",
+    "nodes": {
+     "start": {
+      "text": "Krass! Morgen fällt die Schule aus, steht hier. Teil das!",
+      "options": [
+       {
+        "label": "Wird sofort geteilt!",
+        "next": "ende1"
+       },
+       {
+        "label": "Woher stammt das?",
+        "next": "ende2"
+       }
+      ]
+     },
+     "ende1": {
+      "text": "Oh, das war ein Fake.",
+      "options": []
+     },
+     "ende2": {
+      "text": "Stimmt, ich prüfe das erst.",
+      "options": [],
+      "success": true
+     }
+    },
+    "code": "NEWS-08"
+   },
+   {
+    "type": "scroller",
+    "question": "Markiere alle Fake News.",
+    "description": "Tippe auf die Beiträge.",
+    "posts": [
+     {
+      "user": "EilmeldungHeute",
+      "text": "Forscher beweisen: Handys machen unsichtbar!",
+      "isBad": true
+     },
+     {
+      "user": "Wahrheit99",
+      "text": "Geheime Regierung verbietet Ferien!",
+      "isBad": true
+     },
+     {
+      "user": "ClickNews",
+      "text": "Unglaublich: Dieser Trick macht reich!",
+      "isBad": true
+     },
+     {
+      "user": "Bot_News",
+      "text": "Teilen, sonst passiert etwas Schlimmes!",
+      "isBad": true
+     },
+     {
+      "user": "Mia",
+      "text": "Heute Fußball im Park, wer kommt mit?",
+      "isBad": false
+     },
+     {
+      "user": "Stadtbibliothek",
+      "text": "Am Freitag ist Vorlesenachmittag.",
+      "isBad": false
+     },
+     {
+      "user": "Oma_Gerda",
+      "text": "Der Apfelkuchen ist gelungen!",
+      "isBad": false
+     },
+     {
+      "user": "SportAG",
+      "text": "Training fällt nächste Woche aus.",
+      "isBad": false
+     },
+     {
+      "user": "Tierheim",
+      "text": "Bello sucht ein neues Zuhause.",
+      "isBad": false
+     },
+     {
+      "user": "Wetterdienst",
+      "text": "Morgen wird es sonnig.",
+      "isBad": false
+     }
+    ],
+    "code": "NEWS-09"
+   },
+   {
+    "type": "statement",
+    "question": "Wie erkennst du Fake News?",
+    "description": "Schreibt einen Satz.",
+    "code": "NEWS-10"
+   },
+   {
+    "type": "photo",
+    "question": "Stellt eine Titelseite pantomimisch nach und fotografiert sie.",
+    "description": "Das Foto sieht nur eure Lehrkraft.",
+    "code": "NEWS-11"
+   },
+   {
+    "type": "monster",
+    "question": "[Platzhalter] Monster 1: Sucht eine Schlagzeile und erklärt, warum sie echt oder falsch sein könnte.",
+    "description": "Beispieltext, bitte im Editor durch eure eigene Monster-Aufgabe ersetzen.",
+    "image": "/img/monsters/news-arena-schlange.png"
+   },
+   {
+    "type": "monster",
+    "question": "[Platzhalter] Monster 2: Spielt ein kurzes Nachrichten-Interview vor der Klasse.",
+    "description": "Beispieltext, bitte im Editor durch eure eigene Monster-Aufgabe ersetzen.",
+    "image": "/img/monsters/news-arena-schlange.png"
+   },
+   {
+    "type": "monster",
+    "question": "[Platzhalter] Monster 3: Erfindet ein Merkblatt mit drei Tipps gegen Fake News.",
+    "description": "Beispieltext, bitte im Editor durch eure eigene Monster-Aufgabe ersetzen.",
+    "image": "/img/monsters/news-arena-schlange.png"
+   }
+  ]
+ },
+ {
+  "title": "Social Media Dschungel: Beispielkarten",
+  "world": "dschungel",
+  "tasks": [
+   {
+    "type": "binary",
+    "question": "Darf man Fotos von anderen ohne Erlaubnis posten?",
+    "description": "Rechts für Ja, links für Nein.",
+    "icon": "🐒",
+    "correct": "left",
+    "code": "DSCH-01"
+   },
+   {
+    "type": "choice",
+    "question": "Was machst du bei einem gemeinen Kommentar?",
+    "description": "Wähle die beste Antwort.",
+    "options": [
+     "Noch gemeiner antworten",
+     "Melden und Hilfe holen",
+     "Teilen"
+    ],
+    "correct": 1,
+    "code": "DSCH-02"
+   },
+   {
+    "type": "select",
+    "question": "Was verrät ein öffentliches Profil oft?",
+    "description": "Markiere alle richtigen Antworten.",
+    "options": [
+     "Wohnort",
+     "Freundeskreis",
+     "Schulhof-Ampelschaltung",
+     "Hobbys"
+    ],
+    "correct": [
+     0,
+     1,
+     3
+    ],
+    "code": "DSCH-03"
+   },
+   {
+    "type": "bucket",
+    "question": "Gut oder schlecht für dein Profil?",
+    "description": "Ordne zu.",
+    "buckets": [
+     "Gut",
+     "Schlecht"
+    ],
+    "items": [
+     {
+      "text": "Profil auf privat stellen",
+      "target": 0
+     },
+     {
+      "text": "Standort immer teilen",
+      "target": 1
+     },
+     {
+      "text": "Freundschaften prüfen",
+      "target": 0
+     },
+     {
+      "text": "Passwort posten",
+      "target": 1
+     }
+    ],
+    "code": "DSCH-04"
+   },
+   {
+    "type": "ranking",
+    "question": "Was tust du bei Cybermobbing?",
+    "description": "Der erste Schritt steht oben.",
+    "items": [
+     "Nicht antworten",
+     "Beweise sichern",
+     "Einer Vertrauensperson erzählen",
+     "Melden"
+    ],
+    "code": "DSCH-05"
+   },
+   {
+    "type": "pairs",
+    "question": "Finde die Paare.",
+    "description": "Begriff und Bedeutung.",
+    "pairs": [
+     {
+      "left": "Follower",
+      "right": "Abonnent"
+     },
+     {
+      "left": "Story",
+      "right": "Beitrag für 24 Stunden"
+     },
+     {
+      "left": "Hashtag",
+      "right": "Schlagwort"
+     }
+    ],
+    "code": "DSCH-06"
+   },
+   {
+    "type": "cloze",
+    "question": "Ergänze die Regel.",
+    "description": "Fülle die Lücken.",
+    "text": "Bevor ich etwas [poste], frage ich mich: Würde ich das auch [persönlich] sagen?",
+    "fakes": [
+     "esse",
+     "nie"
+    ],
+    "code": "DSCH-07"
+   },
+   {
+    "type": "chat",
+    "question": "Jemand will dein Profil nutzen.",
+    "description": "Reagiere richtig.",
+    "partner": "InfluencerMax",
+    "nodes": {
+     "start": {
+      "text": "Gib mir dein Passwort, ich mache dich berühmt!",
+      "options": [
+       {
+        "label": "Nein, niemals.",
+        "next": "ende1"
+       },
+       {
+        "label": "Ok, hier ist es.",
+        "next": "ende2"
+       }
+      ]
+     },
+     "ende1": {
+      "text": "Na gut, schade.",
+      "options": [],
+      "success": true
+     },
+     "ende2": {
+      "text": "Dein Profil gehört jetzt mir!",
+      "options": []
+     }
+    },
+    "code": "DSCH-08"
+   },
+   {
+    "type": "scroller",
+    "question": "Markiere alle problematischen Posts.",
+    "description": "Tippe auf die Beiträge.",
+    "posts": [
+     {
+      "user": "Hater_X",
+      "text": "Du bist hässlich, lösch dich.",
+      "isBad": true
+     },
+     {
+      "user": "Gewinnspiel_4U",
+      "text": "Folge mir und gib deine Adresse an!",
+      "isBad": true
+     },
+     {
+      "user": "AnonyMob",
+      "text": "Alle gegen Lena, jetzt kommentieren!",
+      "isBad": true
+     },
+     {
+      "user": "Follower_Shop",
+      "text": "Kauf 1000 Follower für nur 5 Euro!",
+      "isBad": true
+     },
+     {
+      "user": "Mia",
+      "text": "Heute Fußball im Park, wer kommt mit?",
+      "isBad": false
+     },
+     {
+      "user": "Stadtbibliothek",
+      "text": "Am Freitag ist Vorlesenachmittag.",
+      "isBad": false
+     },
+     {
+      "user": "Oma_Gerda",
+      "text": "Der Apfelkuchen ist gelungen!",
+      "isBad": false
+     },
+     {
+      "user": "SportAG",
+      "text": "Training fällt nächste Woche aus.",
+      "isBad": false
+     },
+     {
+      "user": "Tierheim",
+      "text": "Bello sucht ein neues Zuhause.",
+      "isBad": false
+     },
+     {
+      "user": "Wetterdienst",
+      "text": "Morgen wird es sonnig.",
+      "isBad": false
+     }
+    ],
+    "code": "DSCH-09"
+   },
+   {
+    "type": "statement",
+    "question": "Was postest du lieber nicht und warum?",
+    "description": "Schreibt einen Satz.",
+    "code": "DSCH-10"
+   },
+   {
+    "type": "photo",
+    "question": "Fotografiert ein Plakat mit einer Netiquette-Regel.",
+    "description": "Das Foto sieht nur eure Lehrkraft.",
+    "code": "DSCH-11"
+   },
+   {
+    "type": "monster",
+    "question": "[Platzhalter] Monster 1: Zeigt pantomimisch drei Reaktionen auf einen gemeinen Kommentar.",
+    "description": "Beispieltext, bitte im Editor durch eure eigene Monster-Aufgabe ersetzen.",
+    "image": "/img/monsters/dschungel-affe.png"
+   },
+   {
+    "type": "monster",
+    "question": "[Platzhalter] Monster 2: Überlegt euch einen freundlichen Kommentar und tragt ihn laut vor.",
+    "description": "Beispieltext, bitte im Editor durch eure eigene Monster-Aufgabe ersetzen.",
+    "image": "/img/monsters/dschungel-affe.png"
+   },
+   {
+    "type": "monster",
+    "question": "[Platzhalter] Monster 3: Erklärt, woran man erkennt, dass ein Profil gefälscht ist.",
+    "description": "Beispieltext, bitte im Editor durch eure eigene Monster-Aufgabe ersetzen.",
+    "image": "/img/monsters/dschungel-affe.png"
+   }
+  ]
+ },
+ {
+  "title": "Datenhöhle: Beispielkarten",
+  "world": "daten",
+  "tasks": [
+   {
+    "type": "binary",
+    "question": "Sollte eine Taschenlampen-App auf deine Kontakte zugreifen?",
+    "description": "Rechts für Ja, links für Nein.",
+    "icon": "🐌",
+    "correct": "left",
+    "code": "DATEN-01"
+   },
+   {
+    "type": "choice",
+    "question": "Was sind Cookies im Internet?",
+    "description": "Wähle die beste Antwort.",
+    "options": [
+     "Kleine Datenspeicher im Browser",
+     "Ein Computervirus",
+     "Kekse für Roboter"
+    ],
+    "correct": 0,
+    "code": "DATEN-02"
+   },
+   {
+    "type": "select",
+    "question": "Was sind persönliche Daten?",
+    "description": "Markiere alle richtigen Antworten.",
+    "options": [
+     "Name",
+     "Fingerabdruck",
+     "Standort",
+     "Wetter von gestern"
+    ],
+    "correct": [
+     0,
+     1,
+     2
+    ],
+    "code": "DATEN-03"
+   },
+   {
+    "type": "bucket",
+    "question": "Sicher oder unsicher?",
+    "description": "Ordne zu.",
+    "buckets": [
+     "Sicher",
+     "Unsicher"
+    ],
+    "items": [
+     {
+      "text": "Zwei-Faktor-Anmeldung",
+      "target": 0
+     },
+     {
+      "text": "Passwort 123456",
+      "target": 1
+     },
+     {
+      "text": "Updates installieren",
+      "target": 0
+     },
+     {
+      "text": "Gratis-WLAN ohne Schutz",
+      "target": 1
+     }
+    ],
+    "code": "DATEN-04"
+   },
+   {
+    "type": "ranking",
+    "question": "So richtest du ein Konto sicher ein.",
+    "description": "Der erste Schritt steht oben.",
+    "items": [
+     "Starkes Passwort wählen",
+     "Zwei-Faktor einschalten",
+     "Privatsphäre einstellen",
+     "Regelmäßig prüfen"
+    ],
+    "code": "DATEN-05"
+   },
+   {
+    "type": "pairs",
+    "question": "Finde die Paare.",
+    "description": "Begriff und Bedeutung.",
+    "pairs": [
+     {
+      "left": "Tracking",
+      "right": "Verfolgen im Netz"
+     },
+     {
+      "left": "Verschlüsselung",
+      "right": "Daten unlesbar machen"
+     },
+     {
+      "left": "Backup",
+      "right": "Sicherungskopie"
+     }
+    ],
+    "code": "DATEN-06"
+   },
+   {
+    "type": "cloze",
+    "question": "Ergänze den Satz.",
+    "description": "Fülle die Lücken.",
+    "text": "Für jedes Konto nutze ich ein eigenes [Passwort], und ich installiere regelmäßig [Updates].",
+    "fakes": [
+     "Foto",
+     "Spiele"
+    ],
+    "code": "DATEN-07"
+   },
+   {
+    "type": "chat",
+    "question": "Eine App will Zugriff.",
+    "description": "Reagiere richtig.",
+    "partner": "GratisSpieleApp",
+    "nodes": {
+     "start": {
+      "text": "Erlaube Zugriff auf Kontakte, Kamera und Standort!",
+      "options": [
+       {
+        "label": "Alles erlauben.",
+        "next": "ende1"
+       },
+       {
+        "label": "Nur das Nötigste erlauben.",
+        "next": "ende2"
+       }
+      ]
+     },
+     "ende1": {
+      "text": "Deine Daten werden verkauft.",
+      "options": []
+     },
+     "ende2": {
+      "text": "Einstellungen gespeichert.",
+      "options": [],
+      "success": true
+     }
+    },
+    "code": "DATEN-08"
+   },
+   {
+    "type": "scroller",
+    "question": "Markiere alle Datenfallen.",
+    "description": "Tippe auf die Beiträge.",
+    "posts": [
+     {
+      "user": "PrizeBot",
+      "text": "Gib deine Handynummer für ein Handy ein!",
+      "isBad": true
+     },
+     {
+      "user": "QuizKing",
+      "text": "Welcher Promi bist du? Nur mit Adresse!",
+      "isBad": true
+     },
+     {
+      "user": "AppStar",
+      "text": "Neue App: Zugriff auf alle Kontakte erforderlich.",
+      "isBad": true
+     },
+     {
+      "user": "Datensammler",
+      "text": "Sende uns ein Foto deines Ausweises!",
+      "isBad": true
+     },
+     {
+      "user": "Mia",
+      "text": "Heute Fußball im Park, wer kommt mit?",
+      "isBad": false
+     },
+     {
+      "user": "Stadtbibliothek",
+      "text": "Am Freitag ist Vorlesenachmittag.",
+      "isBad": false
+     },
+     {
+      "user": "Oma_Gerda",
+      "text": "Der Apfelkuchen ist gelungen!",
+      "isBad": false
+     },
+     {
+      "user": "SportAG",
+      "text": "Training fällt nächste Woche aus.",
+      "isBad": false
+     },
+     {
+      "user": "Tierheim",
+      "text": "Bello sucht ein neues Zuhause.",
+      "isBad": false
+     },
+     {
+      "user": "Wetterdienst",
+      "text": "Morgen wird es sonnig.",
+      "isBad": false
+     }
+    ],
+    "code": "DATEN-09"
+   },
+   {
+    "type": "statement",
+    "question": "Welche Daten würdest du nie teilen?",
+    "description": "Schreibt einen Satz.",
+    "code": "DATEN-10"
+   },
+   {
+    "type": "photo",
+    "question": "Fotografiert ein Bild eurer eigenen Daten-Regel.",
+    "description": "Bitte keine echten Daten zeigen.",
+    "code": "DATEN-11"
+   },
+   {
+    "type": "monster",
+    "question": "[Platzhalter] Monster 1: Erklärt, welche Spuren ihr heute schon im Netz hinterlassen habt.",
+    "description": "Beispieltext, bitte im Editor durch eure eigene Monster-Aufgabe ersetzen.",
+    "image": "/img/monsters/datenhoehle-schnecke.png"
+   },
+   {
+    "type": "monster",
+    "question": "[Platzhalter] Monster 2: Denkt euch ein sicheres Passwort aus und erklärt die Methode, ohne es zu verraten.",
+    "description": "Beispieltext, bitte im Editor durch eure eigene Monster-Aufgabe ersetzen.",
+    "image": "/img/monsters/datenhoehle-schnecke.png"
+   },
+   {
+    "type": "monster",
+    "question": "[Platzhalter] Monster 3: Zählt drei Apps auf und überlegt, welche Daten sie brauchen und welche nicht.",
+    "description": "Beispieltext, bitte im Editor durch eure eigene Monster-Aufgabe ersetzen.",
+    "image": "/img/monsters/datenhoehle-schnecke.png"
+   }
+  ]
+ },
+ {
+  "title": "KI Labor: Beispielkarten",
+  "world": "ki",
+  "tasks": [
+   {
+    "type": "binary",
+    "question": "Macht eine KI nie Fehler?",
+    "description": "Rechts für Ja, links für Nein.",
+    "icon": "🤖",
+    "correct": "left",
+    "code": "KI-01"
+   },
+   {
+    "type": "choice",
+    "question": "Womit lernt eine KI?",
+    "description": "Wähle die beste Antwort.",
+    "options": [
+     "Mit Daten",
+     "Mit Schlaf",
+     "Mit Gedankenlesen"
+    ],
+    "correct": 0,
+    "code": "KI-02"
+   },
+   {
+    "type": "select",
+    "question": "Wo steckt oft KI drin?",
+    "description": "Markiere alle richtigen Antworten.",
+    "options": [
+     "Sprachassistent",
+     "Videoempfehlungen",
+     "Holzlineal",
+     "Übersetzungs-App"
+    ],
+    "correct": [
+     0,
+     1,
+     3
+    ],
+    "code": "KI-03"
+   },
+   {
+    "type": "bucket",
+    "question": "Mensch oder Maschine?",
+    "description": "Wer kann das besonders gut?",
+    "buckets": [
+     "Mensch",
+     "Maschine"
+    ],
+    "items": [
+     {
+      "text": "Trösten",
+      "target": 0
+     },
+     {
+      "text": "Millionen Zahlen rechnen",
+      "target": 1
+     },
+     {
+      "text": "Verantwortung tragen",
+      "target": 0
+     },
+     {
+      "text": "Riesige Textmengen durchsuchen",
+      "target": 1
+     }
+    ],
+    "code": "KI-04"
+   },
+   {
+    "type": "ranking",
+    "question": "So arbeitest du sinnvoll mit einer KI.",
+    "description": "Der erste Schritt steht oben.",
+    "items": [
+     "Frage klar formulieren",
+     "Antwort lesen",
+     "Antwort prüfen",
+     "Selbst entscheiden"
+    ],
+    "code": "KI-05"
+   },
+   {
+    "type": "pairs",
+    "question": "Finde die Paare.",
+    "description": "Begriff und Bedeutung.",
+    "pairs": [
+     {
+      "left": "Algorithmus",
+      "right": "Handlungsanweisung"
+     },
+     {
+      "left": "Trainingsdaten",
+      "right": "Lernmaterial der KI"
+     },
+     {
+      "left": "Chatbot",
+      "right": "Textbasierter Assistent"
+     }
+    ],
+    "code": "KI-06"
+   },
+   {
+    "type": "cloze",
+    "question": "Ergänze den Satz.",
+    "description": "Fülle die Lücken.",
+    "text": "Eine KI kann sich [irren], deshalb [prüfe] ich ihre Antworten.",
+    "fakes": [
+     "schlafen",
+     "esse"
+    ],
+    "code": "KI-07"
+   },
+   {
+    "type": "chat",
+    "question": "Ein KI-Chatbot behauptet etwas.",
+    "description": "Reagiere richtig.",
+    "partner": "KI-Bot",
+    "nodes": {
+     "start": {
+      "text": "Der Mond ist aus Käse. Das weiß ich sicher!",
+      "options": [
+       {
+        "label": "Das prüfe ich lieber nach.",
+        "next": "ende1"
+       },
+       {
+        "label": "Dann schreibe ich das ins Heft.",
+        "next": "ende2"
+       }
+      ]
+     },
+     "ende1": {
+      "text": "Sehr gut, prüfe immer die Fakten.",
+      "options": [],
+      "success": true
+     },
+     "ende2": {
+      "text": "Oh nein, das war falsch.",
+      "options": []
+     }
+    },
+    "code": "KI-08"
+   },
+   {
+    "type": "scroller",
+    "question": "Markiere alle Beiträge, die dich täuschen sollen.",
+    "description": "Tippe auf die Beiträge.",
+    "posts": [
+     {
+      "user": "DeepfakeStar",
+      "text": "Das Video zeigt wirklich den Präsidenten beim Tanzen!",
+      "isBad": true
+     },
+     {
+      "user": "AI_Guru",
+      "text": "KI sagt die Lottozahlen voraus, jetzt kaufen!",
+      "isBad": true
+     },
+     {
+      "user": "BotArmy",
+      "text": "Tausende stimmen zu, also ist es wahr!",
+      "isBad": true
+     },
+     {
+      "user": "FakeVoice",
+      "text": "Hör dir die Sprachnachricht deiner Mutter an und zahle!",
+      "isBad": true
+     },
+     {
+      "user": "Mia",
+      "text": "Heute Fußball im Park, wer kommt mit?",
+      "isBad": false
+     },
+     {
+      "user": "Stadtbibliothek",
+      "text": "Am Freitag ist Vorlesenachmittag.",
+      "isBad": false
+     },
+     {
+      "user": "Oma_Gerda",
+      "text": "Der Apfelkuchen ist gelungen!",
+      "isBad": false
+     },
+     {
+      "user": "SportAG",
+      "text": "Training fällt nächste Woche aus.",
+      "isBad": false
+     },
+     {
+      "user": "Tierheim",
+      "text": "Bello sucht ein neues Zuhause.",
+      "isBad": false
+     },
+     {
+      "user": "Wetterdienst",
+      "text": "Morgen wird es sonnig.",
+      "isBad": false
+     }
+    ],
+    "code": "KI-09"
+   },
+   {
+    "type": "statement",
+    "question": "Was sollte eine KI nicht für dich entscheiden?",
+    "description": "Schreibt einen Satz.",
+    "code": "KI-10"
+   },
+   {
+    "type": "photo",
+    "question": "Baut einen Roboter aus euren Körpern und fotografiert ihn.",
+    "description": "Das Foto sieht nur eure Lehrkraft.",
+    "code": "KI-11"
+   },
+   {
+    "type": "monster",
+    "question": "[Platzhalter] Monster 1: Spielt einen Roboter, der Anweisungen falsch versteht.",
+    "description": "Beispieltext, bitte im Editor durch eure eigene Monster-Aufgabe ersetzen.",
+    "image": "/img/monsters/ki-labor-roboter.png"
+   },
+   {
+    "type": "monster",
+    "question": "[Platzhalter] Monster 2: Erklärt, woran man ein KI-Bild erkennen könnte.",
+    "description": "Beispieltext, bitte im Editor durch eure eigene Monster-Aufgabe ersetzen.",
+    "image": "/img/monsters/ki-labor-roboter.png"
+   },
+   {
+    "type": "monster",
+    "question": "[Platzhalter] Monster 3: Stellt drei Regeln auf, wie ihr KI in der Schule fair nutzt.",
+    "description": "Beispieltext, bitte im Editor durch eure eigene Monster-Aufgabe ersetzen.",
+    "image": "/img/monsters/ki-labor-roboter.png"
+   }
+  ]
+ },
+ {
+  "title": "Glitch Strand: Beispielkarten",
+  "world": "strand",
+  "tasks": [
+   {
+    "type": "binary",
+    "question": "Darf man auf einen Link in einer unbekannten Mail klicken?",
+    "description": "Rechts für Ja, links für Nein.",
+    "icon": "🦈",
+    "correct": "left",
+    "code": "STRAND-01"
+   },
+   {
+    "type": "choice",
+    "question": "Was ist Phishing?",
+    "description": "Wähle die beste Antwort.",
+    "options": [
+     "Angeln im Meer",
+     "Betrug, um an Daten zu kommen",
+     "Ein Handyspiel"
+    ],
+    "correct": 1,
+    "code": "STRAND-02"
+   },
+   {
+    "type": "select",
+    "question": "Woran erkennst du Betrugs-Mails?",
+    "description": "Markiere alle richtigen Antworten.",
+    "options": [
+     "Komische Absenderadresse",
+     "Zeitdruck",
+     "Rechtschreibfehler",
+     "Dein Lieblingslied im Anhang der Eltern"
+    ],
+    "correct": [
+     0,
+     1,
+     2
+    ],
+    "code": "STRAND-03"
+   },
+   {
+    "type": "bucket",
+    "question": "Vertrauen oder Vorsicht?",
+    "description": "Ordne zu.",
+    "buckets": [
+     "Vertrauen",
+     "Vorsicht"
+    ],
+    "items": [
+     {
+      "text": "Nachricht von bekannter Lehrkraft in der Schul-App",
+      "target": 0
+     },
+     {
+      "text": "Gratis-Gutschein von Unbekannt",
+      "target": 1
+     },
+     {
+      "text": "Offizieller Elternbrief",
+      "target": 0
+     },
+     {
+      "text": "Paket-SMS mit Zahlungslink",
+      "target": 1
+     }
+    ],
+    "code": "STRAND-04"
+   },
+   {
+    "type": "ranking",
+    "question": "Du hast aus Versehen geklickt. Was jetzt?",
+    "description": "Der erste Schritt steht oben.",
+    "items": [
+     "Seite schließen",
+     "Erwachsenen Bescheid sagen",
+     "Passwort ändern",
+     "Gerät prüfen lassen"
+    ],
+    "code": "STRAND-05"
+   },
+   {
+    "type": "pairs",
+    "question": "Finde die Paare.",
+    "description": "Begriff und Bedeutung.",
+    "pairs": [
+     {
+      "left": "Malware",
+      "right": "Schadsoftware"
+     },
+     {
+      "left": "Betreff",
+      "right": "Überschrift einer Mail"
+     },
+     {
+      "left": "Firewall",
+      "right": "Schutz vor Angriffen"
+     }
+    ],
+    "code": "STRAND-06"
+   },
+   {
+    "type": "cloze",
+    "question": "Ergänze die Regel.",
+    "description": "Fülle die Lücken.",
+    "text": "Bei einer komischen Mail klicke ich auf [keinen] Link und frage eine [erwachsene] Person.",
+    "fakes": [
+     "jeden",
+     "fremde"
+    ],
+    "code": "STRAND-07"
+   },
+   {
+    "type": "chat",
+    "question": "Eine SMS verspricht ein Geschenk.",
+    "description": "Reagiere richtig.",
+    "partner": "Paketdienst24",
+    "nodes": {
+     "start": {
+      "text": "Dein Paket wartet! Zahle 1 Euro über diesen Link.",
+      "options": [
+       {
+        "label": "Ich zahle sofort.",
+        "next": "ende1"
+       },
+       {
+        "label": "Ich frage erst meine Eltern.",
+        "next": "ende2"
+       }
+      ]
+     },
+     "ende1": {
+      "text": "Deine Daten sind jetzt weg.",
+      "options": []
+     },
+     "ende2": {
+      "text": "Gute Idee, das war Betrug.",
+      "options": [],
+      "success": true
+     }
+    },
+    "code": "STRAND-08"
+   },
+   {
+    "type": "scroller",
+    "question": "Markiere alle Betrugsversuche.",
+    "description": "Tippe auf die Beiträge.",
+    "posts": [
+     {
+      "user": "Bank_Sicherheit",
+      "text": "Dein Konto ist gesperrt, klicke hier!",
+      "isBad": true
+     },
+     {
+      "user": "Gewinn_SMS",
+      "text": "Du hast 1000 Euro gewonnen!",
+      "isBad": true
+     },
+     {
+      "user": "Hai_Angebote",
+      "text": "Nur heute: Handy für 1 Euro, Vorkasse!",
+      "isBad": true
+     },
+     {
+      "user": "Spiel_Coins",
+      "text": "Gratis Coins, gib dein Passwort ein!",
+      "isBad": true
+     },
+     {
+      "user": "Mia",
+      "text": "Heute Fußball im Park, wer kommt mit?",
+      "isBad": false
+     },
+     {
+      "user": "Stadtbibliothek",
+      "text": "Am Freitag ist Vorlesenachmittag.",
+      "isBad": false
+     },
+     {
+      "user": "Oma_Gerda",
+      "text": "Der Apfelkuchen ist gelungen!",
+      "isBad": false
+     },
+     {
+      "user": "SportAG",
+      "text": "Training fällt nächste Woche aus.",
+      "isBad": false
+     },
+     {
+      "user": "Tierheim",
+      "text": "Bello sucht ein neues Zuhause.",
+      "isBad": false
+     },
+     {
+      "user": "Wetterdienst",
+      "text": "Morgen wird es sonnig.",
+      "isBad": false
+     }
+    ],
+    "code": "STRAND-09"
+   },
+   {
+    "type": "statement",
+    "question": "Was tust du bei einer verdächtigen Nachricht?",
+    "description": "Schreibt einen Satz.",
+    "code": "STRAND-10"
+   },
+   {
+    "type": "photo",
+    "question": "Fotografiert euer Warnschild gegen Betrug.",
+    "description": "Das Foto sieht nur eure Lehrkraft.",
+    "code": "STRAND-11"
+   },
+   {
+    "type": "monster",
+    "question": "[Platzhalter] Monster 1: Spielt eine Szene, in der ein Betrüger euch ködern will.",
+    "description": "Beispieltext, bitte im Editor durch eure eigene Monster-Aufgabe ersetzen.",
+    "image": "/img/monsters/glitch-strand-hai.png"
+   },
+   {
+    "type": "monster",
+    "question": "[Platzhalter] Monster 2: Zeigt, wie man eine verdächtige Nachricht meldet.",
+    "description": "Beispieltext, bitte im Editor durch eure eigene Monster-Aufgabe ersetzen.",
+    "image": "/img/monsters/glitch-strand-hai.png"
+   },
+   {
+    "type": "monster",
+    "question": "[Platzhalter] Monster 3: Erklärt der Lehrkraft, wie ein Phishing-Trick funktioniert.",
+    "description": "Beispieltext, bitte im Editor durch eure eigene Monster-Aufgabe ersetzen.",
+    "image": "/img/monsters/glitch-strand-hai.png"
+   }
+  ]
+ }
+]
