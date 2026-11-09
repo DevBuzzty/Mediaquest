@@ -1,0 +1,9 @@
+{
+  "enabledPlugins": {
+    "podium-core@podium": true,
+    "podium-gates@podium": true,
+    "podium-rituals@podium": true,
+    "podium-roles@podium": true,
+    "podium-security@podium": true
+  }
+}

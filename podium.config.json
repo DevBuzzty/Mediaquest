@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "project": {
+    "defaultBranch": "main",
+    "commitTrailers": []
+  },
+  "workspaces": [
+    {
+      "name": "weltenretter-app",
+      "path": ".",
+      "sourceRoots": [
+        "src"
+      ],
+      "test": "npm run test",
+      "typecheck": "npx tsc --noEmit"
+    }
+  ],
+  "roles": {
+    "gateTrio": [
+      "critic",
+      "verifier"
+    ],
+    "cap": 12
+  },
+  "layers": {
+    "core": {
+      "pinnedVersion": "0.14.0"
+    },
+    "gates": {
+      "pinnedVersion": "0.7.2",
+      "ship": {
+        "riskGlobs": [
+          ".github/workflows/**",
+          "**/Dockerfile*",
+          "**/*auth*",
+          "**/migrations/**",
+          "**/alembic/**",
+          "podium.config.json"
+        ]
+      }
+    },
+    "rituals": {
+      "pinnedVersion": "0.4.2",
+      "triggerAuthority": "plugin"
+    },
+    "roles": {
+      "pinnedVersion": "0.1.2"
+    },
+    "security": {
+      "pinnedVersion": "0.1.5",
+      "git": {
+        "mode": "enforce"
+      },
+      "prompt": {
+        "mode": "enforce"
+      },
+      "secrets": {
+        "mode": "enforce"
+      },
+      "dependencies": {
+        "mode": "off"
+      },
+      "codeScan": {
+        "on": "off"
+      }
+    }
+  }
+}

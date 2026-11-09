@@ -3,3 +3,10 @@ node_modules/
 database.sqlite
 *.log
 data/
+.claude/_podium/health.json
+.claude/_podium/health.json.*
+.claude/_podium/gate-runs.jsonl
+.claude/_podium/last-harvest.json
+.claude/_podium/last-ritual.json
+.claude/settings.local.json
+.claude/worktrees/
